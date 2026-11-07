@@ -1,48 +1,193 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#211817"><link rel="manifest" href="manifest.json"><title>FaithTube</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#211817">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FaithTube">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<title>FaithTube</title>
+
 <style>
-*{box-sizing:border-box}body{margin:0;background:#17110f;color:#fff;font-family:Arial,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer;border:0;border-radius:10px;padding:12px 17px;background:#e87991;color:#321820;font-weight:bold}button:hover{opacity:.86}button:disabled{opacity:.5;cursor:not-allowed}input,select,textarea{width:100%;padding:13px;margin:7px 0;background:#302321;color:white;border:1px solid #59413e;border-radius:9px}textarea{min-height:90px;resize:vertical}.hidden{display:none!important}.logo{font-size:28px;font-weight:bold}.logo span{color:#e87991}.small{color:#bcaeaa;font-size:13px}.pink{color:#e87991}#loginScreen{min-height:100vh;display:grid;place-items:center;padding:20px}.loginBox{width:100%;max-width:420px;background:#251b19;padding:30px;border-radius:20px;border:1px solid #493936}header{min-height:70px;background:#211817;border-bottom:1px solid #493936;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:10;gap:12px}.layout{display:flex;min-height:calc(100vh - 70px)}aside{width:235px;flex-shrink:0;background:#211817;padding:20px}nav button{width:100%;text-align:left;background:transparent;color:#eee;margin:4px 0}nav button.active,nav button:hover{background:#493036}main{width:100%;max-width:1400px;margin:auto;padding:28px}h1{font-size:30px}h2{margin-top:35px}.hero{min-height:310px;padding:38px;border-radius:22px;background:linear-gradient(110deg,#53333d,#291e1c 70%,#422b32);display:flex;align-items:center;justify-content:space-between;overflow:hidden}.heroText{max-width:570px}.hero h1{font-size:clamp(34px,5vw,53px);line-height:1.1;margin:15px 0}.hero p{color:#e1cfce;line-height:1.6}.heroCross{font-size:150px;color:#e87991;opacity:.6;padding:20px}.categoryGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin:20px 0 35px}.categoryCard{background:#251b19;border:1px solid #493936;padding:22px;border-radius:16px;cursor:pointer;transition:.2s}.categoryCard:hover{transform:translateY(-4px);border-color:#e87991}.categoryCard span{font-size:32px;color:#e87991}.categoryCard p{color:#bcaeaa;font-size:13px}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px}.video{background:#251b19;border:1px solid #493936;border-radius:15px;overflow:hidden}.video video{width:100%;height:170px;object-fit:contain;background:#0d0b0a}.videoInfo{padding:15px}.videoInfo h3{margin:0 0 9px}.author{font-size:13px;color:#bcaeaa}.verified{color:#55aaff;font-weight:bold}.panel{background:#251b19;border:1px solid #493936;padding:20px;border-radius:15px;margin:18px 0}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.actions button{font-size:12px;padding:9px}.secondary{background:#493936;color:white}.danger{background:#a94343;color:white}.comment{border-top:1px solid #493936;padding:10px 0;font-size:14px}.menuToggle{display:none}.message{min-height:20px;color:#e9b4c0;font-size:13px}.adminRow{padding:12px 0;border-bottom:1px solid #493936}@media(max-width:700px){.layout{display:block}aside{display:none;width:100%;padding:10px}aside.open{display:block}nav{display:grid;grid-template-columns:1fr 1fr}main{padding:16px}.menuToggle{display:inline-block}header{padding:0 12px}.hero{padding:25px;min-height:270px}.heroCross{font-size:75px;padding:0}}
+*{box-sizing:border-box}
+body{margin:0;background:#17110f;color:white;font-family:Arial,sans-serif}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer;border:0;border-radius:10px;padding:12px 17px;background:#e87991;color:#321820;font-weight:bold}
+input,select,textarea{width:100%;padding:13px;margin:7px 0;background:#302321;color:white;border:1px solid #59413e;border-radius:9px}
+textarea{min-height:90px}
+.hidden{display:none!important}
+.logo{font-size:28px;font-weight:bold}
+.logo span,.pink{color:#e87991}
+.small{color:#bcaeaa;font-size:13px}
+#loginScreen{min-height:100vh;display:grid;place-items:center;padding:20px}
+.loginBox{width:100%;max-width:420px;background:#251b19;padding:30px;border-radius:20px;border:1px solid #493936}
+header{min-height:70px;background:#211817;border-bottom:1px solid #493936;display:flex;align-items:center;justify-content:space-between;padding:12px 24px;position:sticky;top:0;z-index:10;gap:12px;flex-wrap:wrap}
+.layout{display:flex;min-height:calc(100vh - 70px)}
+aside{width:235px;flex-shrink:0;background:#211817;padding:20px}
+nav button{width:100%;text-align:left;background:transparent;color:white;margin:4px 0}
+nav button.active,nav button:hover{background:#493036}
+main{width:100%;max-width:1400px;margin:auto;padding:28px}
+h1{font-size:30px}
+.hero{min-height:310px;padding:38px;border-radius:22px;background:linear-gradient(110deg,#53333d,#291e1c 70%,#422b32);display:flex;align-items:center;justify-content:space-between}
+.heroText{max-width:570px}
+.hero h1{font-size:clamp(34px,5vw,53px);line-height:1.1}
+.hero p{color:#e1cfce;line-height:1.6}
+.heroCross{font-size:150px;color:#e87991;opacity:.6}
+.categoryGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin:20px 0 35px}
+.categoryCard,.panel,.video{background:#251b19;border:1px solid #493936;border-radius:15px}
+.categoryCard{padding:22px;cursor:pointer}
+.categoryCard span{font-size:32px;color:#e87991}
+.categoryCard p{color:#bcaeaa;font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px}
+.video{overflow:hidden}
+.video video{width:100%;height:170px;object-fit:contain;background:#0d0b0a}
+.videoInfo{padding:15px}
+.author{font-size:13px;color:#bcaeaa}
+.verified{color:#55aaff;font-weight:bold}
+.panel{padding:20px;margin:18px 0}
+.secondary{background:#493936;color:white}
+.danger{background:#a94343;color:white}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.actions button{font-size:12px;padding:9px}
+.comment{border-top:1px solid #493936;padding:10px 0}
+.message{color:#e9b4c0;font-size:13px}
+.adminRow{padding:12px 0;border-bottom:1px solid #493936}
+.menuToggle{display:none}
+.installHelp{background:#302321;border:1px solid #59413e;border-radius:10px;padding:12px;margin-top:14px;color:#f4dce2;font-size:13px;line-height:1.5}
+@media(max-width:700px){
+.layout{display:block}
+aside{display:none;width:100%;padding:10px}
+aside.open{display:block}
+nav{display:grid;grid-template-columns:1fr 1fr}
+main{padding:16px}
+.menuToggle{display:inline-block}
+header{padding:10px 12px}
+.hero{padding:25px;min-height:270px}
+.heroCross{font-size:75px}
+}
 </style>
 </head>
+
 <body>
-<section id="loginScreen"><div class="loginBox"><div class="logo">Faith<span>Tube</span></div><p class="small">Het Woord, dichtbij.</p>
-<div id="loginForm"><h2>Welkom terug</h2><p class="small">Log in om FaithTube te ontdekken.</p><input id="loginEmail" type="email" autocomplete="username" placeholder="E-mailadres"><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Wachtwoord"><button onclick="login()">Inloggen</button><p class="small">Nog geen account? <a href="#" class="pink" onclick="showRegister();return false">Registreer hier</a></p></div>
-<div id="registerForm" class="hidden"><h2>Maak een account</h2><p class="small">Word onderdeel van FaithTube.</p><input id="regName" autocomplete="name" placeholder="Je naam"><input id="regEmail" type="email" autocomplete="email" placeholder="E-mailadres"><input id="regPassword" type="password" autocomplete="new-password" placeholder="Wachtwoord (minimaal 8 tekens)"><button onclick="register()">Account maken</button><p class="small">Heb je al een account? <a href="#" class="pink" onclick="showLogin();return false">Inloggen</a></p></div><p id="loginMessage" class="message"></p></div></section>
-<div id="app" class="hidden"><header><div style="display:flex;align-items:center;gap:12px"><button class="menuToggle secondary" onclick="toggleMenu()">☰</button><div class="logo">Faith<span>Tube</span></div></div><div style="display:flex;align-items:center;gap:12px"><span id="headerUser" class="small"></span><button class="secondary" onclick="logout()">Uitloggen</button></div></header>
-<div class="layout"><aside id="sidebar"><nav><button class="active" onclick="showPage('home',this)">⌂ Home</button><button onclick="showCategory('Alles',this)">▶ Kijken</button><button onclick="showCategory('Preek',this)">✝ Preken</button><button onclick="showCategory('Worship',this)">♫ Worship</button><button onclick="showCategory('Bijbelstudie',this)">▤ Bijbelstudie</button><button onclick="showPage('upload',this)">＋ Video uploaden</button><button id="adminMenu" class="hidden" onclick="showPage('admin',this)">⚙ Beheer</button></nav></aside>
-<main><section id="homePage"><div class="hero"><div class="heroText"><p class="pink"><b>WELKOM BIJ FAITHTUBE</b></p><h1>Geloof groeit wanneer je deelt.</h1><p>Ontdek inspirerende preken, prachtige worship en Bijbelstudies. Alles op één plek.</p><button onclick="showCategory('Alles')">Ontdek video's →</button></div><div class="heroCross">✝</div></div><h2>Ontdek op jouw manier</h2><div class="categoryGrid"><div class="categoryCard" onclick="showCategory('Preek')"><span>✝</span><h3>Preken</h3><p>Luister naar Gods Woord.</p></div><div class="categoryCard" onclick="showCategory('Worship')"><span>♫</span><h3>Worship</h3><p>Prijs en aanbid samen.</p></div><div class="categoryCard" onclick="showCategory('Bijbelstudie')"><span>▤</span><h3>Bijbelstudie</h3><p>Ontdek meer uit de Bijbel.</p></div></div><h2>Nieuw op FaithTube</h2><div id="homeVideos" class="grid"></div></section>
-<section id="watchPage" class="hidden"><h1 id="watchTitle">Alle video's</h1><p class="small">Bekijk alle goedgekeurde video's op FaithTube.</p><div id="videoGrid" class="grid"></div></section>
+
+<section id="loginScreen">
+<div class="loginBox">
+<div class="logo">Faith<span>Tube</span></div>
+<p class="small">Het Woord, dichtbij.</p>
+
+<button id="loginInstallButton" class="secondary" onclick="installFaithTube()">Installeer FaithTube</button>
+<div id="installHelp" class="installHelp hidden"></div>
+
+<div id="loginForm">
+<h2>Welkom terug</h2>
+<p class="small">Log in om FaithTube te ontdekken.</p>
+<input id="loginEmail" type="email" placeholder="E-mailadres">
+<input id="loginPassword" type="password" placeholder="Wachtwoord">
+<button onclick="login()">Inloggen</button>
+<p class="small">Nog geen account? <a href="#" class="pink" onclick="showRegister();return false">Registreer hier</a></p>
+</div>
+
+<div id="registerForm" class="hidden">
+<h2>Maak een account</h2>
+<p class="small">Word onderdeel van FaithTube.</p>
+<input id="regName" placeholder="Je naam">
+<input id="regEmail" type="email" placeholder="E-mailadres">
+<input id="regPassword" type="password" placeholder="Wachtwoord (minimaal 8 tekens)">
+<button onclick="register()">Account maken</button>
+<p class="small">Heb je al een account? <a href="#" class="pink" onclick="showLogin();return false">Inloggen</a></p>
+</div>
+<p id="loginMessage" class="message"></p>
+</div>
+</section>
+
+<div id="app" class="hidden">
+<header>
+<div style="display:flex;align-items:center;gap:12px">
+<button class="menuToggle secondary" onclick="toggleMenu()">☰</button>
+<div class="logo">Faith<span>Tube</span></div>
+</div>
+<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+<span id="headerUser" class="small"></span>
+<button id="headerInstallButton" class="secondary hidden" onclick="installFaithTube()">Installeer FaithTube</button>
+<button class="secondary" onclick="logout()">Uitloggen</button>
+</div>
+</header>
+
+<div class="layout">
+<aside id="sidebar">
+<nav>
+<button class="active" onclick="showPage('home',this)">⌂ Home</button>
+<button onclick="showCategory('Alles',this)">▶ Kijken</button>
+<button onclick="showCategory('Preek',this)">✝ Preken</button>
+<button onclick="showCategory('Worship',this)">♫ Worship</button>
+<button onclick="showCategory('Bijbelstudie',this)">▤ Bijbelstudie</button>
+<button onclick="showPage('upload',this)">＋ Video uploaden</button>
+<button id="adminMenu" class="hidden" onclick="showPage('admin',this)">⚙ Beheer</button>
+</nav>
+</aside>
+
+<main>
+<section id="homePage">
+<div class="hero">
+<div class="heroText">
+<p class="pink"><b>WELKOM BIJ FAITHTUBE</b></p>
+<h1>Geloof groeit wanneer je deelt.</h1>
+<p>Ontdek inspirerende preken, prachtige worship en Bijbelstudies. Alles op één plek.</p>
+<button onclick="showCategory('Alles')">Ontdek video's →</button>
+</div>
+<div class="heroCross">✝</div>
+</div>
+
+<h2>Ontdek op jouw manier</h2>
+<div class="categoryGrid">
+<div class="categoryCard" onclick="showCategory('Preek')"><span>✝</span><h3>Preken</h3><p>Luister naar Gods Woord.</p></div>
+<div class="categoryCard" onclick="showCategory('Worship')"><span>♫</span><h3>Worship</h3><p>Prijs en aanbid samen.</p></div>
+<div class="categoryCard" onclick="showCategory('Bijbelstudie')"><span>▤</span><h3>Bijbelstudie</h3><p>Ontdek meer uit de Bijbel.</p></div>
+</div>
+<h2>Nieuw op FaithTube</h2>
+<div id="homeVideos" class="grid"></div>
+</section>
+
+<section id="watchPage" class="hidden">
+<h1 id="watchTitle">Alle video's</h1>
+<p class="small">Bekijk alle goedgekeurde video's op FaithTube.</p>
+<div id="videoGrid" class="grid"></div>
+</section>
+
 <section id="uploadPage" class="hidden">
 <h1>Video of Bijbelstudie uploaden</h1>
 <p class="small">Je inzending wordt eerst door een beheerder gecontroleerd.</p>
 <div class="panel">
-<label for="videoTitle">Titel</label>
+<label>Titel</label>
 <input id="videoTitle" placeholder="Titel van je inzending">
-<label for="videoCategory">Categorie</label>
+<label>Categorie</label>
 <select id="videoCategory" onchange="updateUploadFields()">
 <option value="Preek">Preek</option>
 <option value="Worship">Worship</option>
 <option value="Bijbelstudie">Bijbelstudie</option>
 </select>
+
 <div id="normalVideoFields">
-<label for="normalVideoFile">Videobestand</label>
+<label>Videobestand</label>
 <input id="normalVideoFile" type="file" accept="video/*">
-<label for="normalDescription">Beschrijving</label>
+<label>Beschrijving</label>
 <textarea id="normalDescription" placeholder="Vertel waar de video over gaat"></textarea>
 </div>
+
 <div id="bibleStudyFields" class="hidden">
-<label for="bibleReference">Bijbelgedeelte (verplicht)</label>
+<label>Bijbelgedeelte (verplicht)</label>
 <input id="bibleReference" placeholder="Bijvoorbeeld Johannes 3:16-21">
-<label for="videoFile">Video (optioneel)</label>
+<label>Video (optioneel)</label>
 <input id="videoFile" type="file" accept="video/*">
 <div id="videoStudyDescription" class="hidden">
-<label for="videoDescription">Beschrijving van de video (verplicht als je een video toevoegt)</label>
-<textarea id="videoDescription" placeholder="Beschrijf de video"></textarea>
+<label>Beschrijving van de video</label>
+<textarea id="videoDescription"></textarea>
 </div>
 <div id="studyTextFields">
-<label for="studyContent">Volledige Bijbelstudie</label>
+<label>Volledige Bijbelstudie</label>
 <textarea id="studyContent" placeholder="Schrijf hier je volledige Bijbelstudie"></textarea>
 </div>
 </div>
@@ -50,72 +195,360 @@
 <p id="uploadMessage" class="message"></p>
 </div>
 </section>
-<section id="adminPage" class="hidden"><h1>Beheerdersdashboard</h1><div class="panel"><h2>Overzicht</h2><p id="stats"></p></div><div class="panel"><h2>Video's goedkeuren</h2><div id="pendingVideos"></div></div><div class="panel"><h2>Accounts beheren</h2><div id="accounts"></div></div><div class="panel"><h2>Reacties beheren</h2><div id="allComments"></div></div><button class="secondary" onclick="showPage('home')">Terug naar bezoekersweergave</button></section></main></div></div>
+
+<section id="adminPage" class="hidden">
+<h1>Beheerdersdashboard</h1>
+<div class="panel"><h2>Overzicht</h2><p id="stats"></p></div>
+<div class="panel"><h2>Video's goedkeuren</h2><div id="pendingVideos"></div></div>
+<div class="panel"><h2>Accounts beheren</h2><div id="accounts"></div></div>
+<div class="panel"><h2>Reacties beheren</h2><div id="allComments"></div></div>
+<button class="secondary" onclick="showPage('home')">Terug naar bezoekersweergave</button>
+</section>
+</main>
+</div>
+</div>
+
 <script>
-const API_BASE="http://localhost:3000";
-let token=sessionStorage.getItem("ft_token")||"",currentUser=null,currentCategory="Alles",approvedVideos=[];
-const $=id=>document.getElementById(id);
-function escapeHTML(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
-async function api(path,options={}){const headers={...(options.headers||{})};if(token)headers.Authorization="Bearer "+token;if(options.body&&!(options.body instanceof FormData))headers["Content-Type"]="application/json";const r=await fetch(API_BASE+path,{...options,headers});const d=await r.json().catch(()=>({error:"De server gaf geen geldig antwoord."}));if(!r.ok)throw new Error(d.error||"Er ging iets mis.");return d;}
-function showRegister(){$("loginForm").classList.add("hidden");$("registerForm").classList.remove("hidden");$("loginMessage").textContent="";}
-function showLogin(){$("registerForm").classList.add("hidden");$("loginForm").classList.remove("hidden");$("loginMessage").textContent="";}
-async function register(){const name=$("regName").value.trim(),email=$("regEmail").value.trim(),password=$("regPassword").value;if(!name||!email||!password){$("loginMessage").textContent="Vul alle velden in.";return;}if(password.length<8){$("loginMessage").textContent="Je wachtwoord moet minimaal 8 tekens bevatten.";return;}try{const d=await api("/register",{method:"POST",body:JSON.stringify({name,email,password})});$("regName").value=$("regEmail").value=$("regPassword").value="";showLogin();$("loginMessage").textContent=d.message+" Je kunt nu inloggen.";}catch(e){$("loginMessage").textContent=e.message;}}
-async function login(){const email=$("loginEmail").value.trim(),password=$("loginPassword").value;if(!email||!password){$("loginMessage").textContent="Vul je e-mailadres en wachtwoord in.";return;}try{const d=await api("/login",{method:"POST",body:JSON.stringify({email,password})});token=d.token;sessionStorage.setItem("ft_token",token);currentUser=d.user;openApp();}catch(e){$("loginMessage").textContent=e.message;}}
-async function restoreSession(){if(!token)return;try{const d=await api("/me");currentUser=d.user;openApp();}catch{token="";sessionStorage.removeItem("ft_token");}}
-function openApp(){$("loginScreen").classList.add("hidden");$("app").classList.remove("hidden");$("headerUser").textContent=currentUser.name;$("adminMenu").classList.toggle("hidden",currentUser.role!=="admin");showPage("home");}
-function logout(){token="";currentUser=null;sessionStorage.removeItem("ft_token");$("app").classList.add("hidden");$("loginScreen").classList.remove("hidden");showLogin();}
-function isAdmin(){return currentUser&&currentUser.role==="admin"&&currentUser.email==="lukevandendool2012@gmail.com";}
-function toggleMenu(){$("sidebar").classList.toggle("open");}
-function hidePages(){["homePage","watchPage","uploadPage","adminPage"].forEach(id=>{const page=$(id);if(page)page.classList.add("hidden");});}
-function showPage(page,button){if(page==="admin"&&!isAdmin())return;hidePages();$(page+"Page").classList.remove("hidden");document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));if(button)button.classList.add("active");if(page==="home")renderHome();if(page==="admin")renderAdmin();$("sidebar").classList.remove("open");}
-function showCategory(cat,button){currentCategory=cat;$("watchTitle").textContent=cat==="Alles"?"Alle video's":cat;hidePages();$("watchPage").classList.remove("hidden");document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));if(button)button.classList.add("active");renderVideos();$("sidebar").classList.remove("open");}
-function videoUrl(v){return v&&v.startsWith("http")?v:API_BASE+v;}
-async function loadVideos(){try{approvedVideos=await api("/videos");}catch(e){approvedVideos=[];console.error(e);}}
-function sorted(list){return list.slice().sort((a,b)=>Number(b.author_verified||0)-Number(a.author_verified||0)||new Date(b.created_at)-new Date(a.created_at));}
-function makeVideoCard(v){const card=document.createElement("article");card.className="video";const player=document.createElement("video");player.controls=true;player.preload="metadata";player.src=videoUrl(v.video_url);card.appendChild(player);const info=document.createElement("div");info.className="videoInfo";const tick=Number(v.author_verified)===1?'<span class="verified"> ✔</span>':"";info.innerHTML=`<h3>${escapeHTML(v.title)}</h3><p class="small">${escapeHTML(v.category)}</p><p class="author">${escapeHTML(v.author_name||"FaithTube-gebruiker")}${tick}</p><p>${escapeHTML(v.description||"")}</p><h4>Reacties</h4><div class="commentList"><span class="small">Reacties laden...</span></div><input class="commentInput" placeholder="Schrijf een reactie..."><button class="commentButton">Plaatsen</button><p class="message"></p>`;const list=info.querySelector(".commentList"),field=info.querySelector(".commentInput"),btn=info.querySelector(".commentButton"),msg=info.querySelector(".message");loadComments(v.id,list);btn.onclick=async()=>{if(!field.value.trim())return;try{await api(`/videos/${v.id}/comments`,{method:"POST",body:JSON.stringify({comment:field.value.trim()})});field.value="";await loadComments(v.id,list);}catch(e){msg.textContent=e.message;}};card.appendChild(info);return card;}
-async function loadComments(id,box){try{const cs=await api(`/videos/${id}/comments`);box.innerHTML="";if(!cs.length){box.innerHTML='<p class="small">Nog geen reacties.</p>';return;}cs.forEach(c=>{const row=document.createElement("div");row.className="comment";row.textContent=c.author_name+": "+c.comment;box.appendChild(row);});}catch(e){box.textContent=e.message;}}
-function renderHome(){const box=$("homeVideos");box.innerHTML="";const list=sorted(approvedVideos).slice(0,4);if(!list.length){box.innerHTML='<p class="small">Er zijn nog geen goedgekeurde video’s. Kom later terug!</p>';return;}list.forEach(v=>box.appendChild(makeVideoCard(v)));}
-function renderVideos(){const box=$("videoGrid");box.innerHTML="";let list=approvedVideos;if(currentCategory!=="Alles")list=list.filter(v=>v.category===currentCategory);list=sorted(list);if(!list.length){box.innerHTML='<p class="small">Er zijn nog geen goedgekeurde video’s in deze categorie.</p>';return;}list.forEach(v=>box.appendChild(makeVideoCard(v)));}
-function updateUploadFields(){
- const study=$("videoCategory").value==="Bijbelstudie";
- $("bibleStudyFields").classList.toggle("hidden",!study);
- $("normalVideoFields").classList.toggle("hidden",study);
- if(study)updateStudyMode();
+"use strict";
+
+const API_BASE = "https://fathtube-server.onrender.com";
+
+let token = sessionStorage.getItem("ft_token") || "";
+let currentUser = null;
+let currentCategory = "Alles";
+let approvedVideos = [];
+let deferredInstallPrompt = null;
+
+const $ = id => document.getElementById(id);
+
+function escapeHTML(value) {
+return String(value ?? "").replace(/[&<>"']/g, c => ({
+"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+}[c]));
 }
-function updateStudyMode(){
- const hasVideo=$("videoFile").files.length>0;
- $("studyTextFields").classList.toggle("hidden",hasVideo);
- $("videoStudyDescription").classList.toggle("hidden",!hasVideo);
+
+/* INSTALLATIE ANDROID EN IPHONE */
+
+function isAppleMobile() {
+return /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+(navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+
+function showInstallHelp(message) {
+$("installHelp").textContent = message;
+$("installHelp").classList.remove("hidden");
+}
+
+window.addEventListener("beforeinstallprompt", event => {
+event.preventDefault();
+deferredInstallPrompt = event;
+$("loginInstallButton").classList.remove("hidden");
+$("headerInstallButton").classList.remove("hidden");
+});
+
+window.addEventListener("appinstalled", () => {
+deferredInstallPrompt = null;
+$("loginInstallButton").classList.add("hidden");
+$("headerInstallButton").classList.add("hidden");
+$("installHelp").classList.add("hidden");
+});
+
+async function installFaithTube() {
+if (deferredInstallPrompt) {
+deferredInstallPrompt.prompt();
+await deferredInstallPrompt.userChoice;
+deferredInstallPrompt = null;
+$("loginInstallButton").classList.add("hidden");
+$("headerInstallButton").classList.add("hidden");
+return;
+}
+
+if (isAppleMobile()) {
+showInstallHelp("FaithTube installeren op iPhone: open deze website in Safari. Tik op de Deel-knop (vierkant met pijltje omhoog), kies 'Zet op beginscherm' en tik op 'Voeg toe'.");
+} else {
+showInstallHelp("Open het browsermenu (⋮) en kies 'App installeren' of 'Toevoegen aan startscherm'. Gebruik Chrome of Edge.");
+}
+}
+
+/* ACCOUNT AANMAKEN */
+
+async function api(path, options = {}) {
+const headers = {...(options.headers || {})};
+if (token) headers.Authorization = "Bearer " + token;
+if (options.body && !(options.body instanceof FormData)) {
+headers["Content-Type"] = "application/json";
+}
+let response;
+try {
+response = await fetch(API_BASE + path, {...options, headers});
+} catch {
+throw new Error("Kan geen verbinding maken met de FaithTube-server. Probeer het later opnieuw.");
+}
+const data = await response.json().catch(() => ({error:"De server gaf geen geldig antwoord."}));
+if (!response.ok) throw new Error(data.error || "Er ging iets mis.");
+return data;
+}
+
+function showRegister() {
+$("loginForm").classList.add("hidden");
+$("registerForm").classList.remove("hidden");
+$("loginMessage").textContent = "";
+}
+function showLogin() {
+$("registerForm").classList.add("hidden");
+$("loginForm").classList.remove("hidden");
+$("loginMessage").textContent = "";
+}
+
+async function register() {
+const name=$("regName").value.trim();
+const email=$("regEmail").value.trim();
+const password=$("regPassword").value;
+if(!name||!email||!password){$("loginMessage").textContent="Vul alle velden in.";return;}
+if(password.length<8){$("loginMessage").textContent="Je wachtwoord moet minimaal 8 tekens bevatten.";return;}
+try{
+const data=await api("/register",{method:"POST",body:JSON.stringify({name,email,password})});
+$("regName").value="";$("regEmail").value="";$("regPassword").value="";
+showLogin();$("loginMessage").textContent=(data.message||"Account aangemaakt.")+" Je kunt nu inloggen.";
+}catch(error){$("loginMessage").textContent=error.message;}
+}
+
+/* INLOGGEN */
+
+async function login() {
+const email=$("loginEmail").value.trim();
+const password=$("loginPassword").value;
+if(!email||!password){$("loginMessage").textContent="Vul je e-mailadres en wachtwoord in.";return;}
+try{
+const data=await api("/login",{method:"POST",body:JSON.stringify({email,password})});
+token=data.token;currentUser=data.user;sessionStorage.setItem("ft_token",token);
+await openApp();
+}catch(error){$("loginMessage").textContent=error.message;}
+}
+
+async function restoreSession() {
+if(!token)return;
+try{const data=await api("/me");currentUser=data.user;await openApp();}
+catch{token="";currentUser=null;sessionStorage.removeItem("ft_token");}
+}
+
+async function openApp() {
+$("loginScreen").classList.add("hidden");
+$("app").classList.remove("hidden");
+$("headerUser").textContent=currentUser.name;
+$("adminMenu").classList.toggle("hidden",currentUser.role!=="admin");
+await loadVideos();showPage("home");
+}
+
+function logout() {
+token="";currentUser=null;sessionStorage.removeItem("ft_token");
+$("app").classList.add("hidden");$("loginScreen").classList.remove("hidden");showLogin();
+}
+
+function isAdmin() {
+return currentUser&&currentUser.role==="admin"&&currentUser.email.toLowerCase()==="lukevandendool2012@gmail.com";
+}
+
+/* PAGINA'S */
+
+function toggleMenu(){$("sidebar").classList.toggle("open");}
+function hidePages(){["homePage","watchPage","uploadPage","adminPage"].forEach(id=>$(id).classList.add("hidden"));}
+
+function showPage(page,button) {
+if(page==="admin"&&!isAdmin())return;
+hidePages();$(page+"Page").classList.remove("hidden");
+document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));
+if(button)button.classList.add("active");
+if(page==="home")renderHome();
+if(page==="admin")renderAdmin();
+$("sidebar").classList.remove("open");
+}
+
+function showCategory(category,button) {
+currentCategory=category;
+$("watchTitle").textContent=category==="Alles"?"Alle video's":category;
+hidePages();$("watchPage").classList.remove("hidden");
+document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));
+if(button)button.classList.add("active");
+renderVideos();$("sidebar").classList.remove("open");
+}
+
+/* VIDEO'S */
+
+function videoUrl(url) {
+if(!url)return "";
+return url.startsWith("http")?url:API_BASE+(url.startsWith("/")?url:"/"+url);
+}
+
+async function loadVideos() {
+try{approvedVideos=await api("/videos");}
+catch(error){approvedVideos=[];console.error(error);}
+}
+
+function sorted(list) {
+return list.slice().sort((a,b)=>Number(b.author_verified||0)-Number(a.author_verified||0)||new Date(b.created_at)-new Date(a.created_at));
+}
+
+function makeVideoCard(video) {
+const card=document.createElement("article");card.className="video";
+if(video.video_url){
+const player=document.createElement("video");player.controls=true;player.preload="metadata";player.src=videoUrl(video.video_url);card.appendChild(player);
+}
+const info=document.createElement("div");info.className="videoInfo";
+const tick=Number(video.author_verified)===1?'<span class="verified"> ✔</span>':"";
+info.innerHTML=`
+<h3>${escapeHTML(video.title)}</h3>
+<p class="small">${escapeHTML(video.category)}</p>
+<p class="author">${escapeHTML(video.author_name||"FaithTube-gebruiker")}${tick}</p>
+<p>${escapeHTML(video.description||"")}</p>
+${video.bible_reference?`<p><b>Bijbelgedeelte:</b> ${escapeHTML(video.bible_reference)}</p>`:""}
+${video.study_content?`<div class="panel">${escapeHTML(video.study_content).replace(/\n/g,"<br>")}</div>`:""}
+<h4>Reacties</h4>
+<div class="commentList"><span class="small">Reacties laden...</span></div>
+<input class="commentInput" placeholder="Schrijf een reactie...">
+<button class="commentButton">Plaatsen</button>
+<p class="message"></p>`;
+const list=info.querySelector(".commentList");
+const field=info.querySelector(".commentInput");
+const button=info.querySelector(".commentButton");
+const message=info.querySelector(".message");
+loadComments(video.id,list);
+button.onclick=async()=>{
+if(!field.value.trim())return;
+try{
+await api(`/videos/${video.id}/comments`,{method:"POST",body:JSON.stringify({comment:field.value.trim()})});
+field.value="";await loadComments(video.id,list);
+}catch(error){message.textContent=error.message;}
+};
+card.appendChild(info);return card;
+}
+
+async function loadComments(id,box) {
+try{
+const comments=await api(`/videos/${id}/comments`);box.innerHTML="";
+if(!comments.length){box.innerHTML='<p class="small">Nog geen reacties.</p>';return;}
+comments.forEach(comment=>{
+const row=document.createElement("div");row.className="comment";
+row.textContent=comment.author_name+": "+comment.comment;box.appendChild(row);
+});
+}catch(error){box.textContent=error.message;}
+}
+
+function renderHome() {
+const box=$("homeVideos");box.innerHTML="";
+const videos=sorted(approvedVideos).slice(0,4);
+if(!videos.length){box.innerHTML='<p class="small">Er zijn nog geen goedgekeurde video’s. Kom later terug!</p>';return;}
+videos.forEach(video=>box.appendChild(makeVideoCard(video)));
+}
+
+function renderVideos() {
+const box=$("videoGrid");box.innerHTML="";
+let videos=approvedVideos;
+if(currentCategory!=="Alles")videos=videos.filter(v=>v.category===currentCategory);
+videos=sorted(videos);
+if(!videos.length){box.innerHTML='<p class="small">Er zijn nog geen goedgekeurde inzendingen in deze categorie.</p>';return;}
+videos.forEach(video=>box.appendChild(makeVideoCard(video)));
+}
+
+/* UPLOADS */
+
+function updateUploadFields() {
+const study=$("videoCategory").value==="Bijbelstudie";
+$("bibleStudyFields").classList.toggle("hidden",!study);
+$("normalVideoFields").classList.toggle("hidden",study);
+if(study)updateStudyMode();
+}
+
+function updateStudyMode() {
+const hasVideo=$("videoFile").files.length>0;
+$("studyTextFields").classList.toggle("hidden",hasVideo);
+$("videoStudyDescription").classList.toggle("hidden",!hasVideo);
 }
 $("videoFile").addEventListener("change",updateStudyMode);
-async function submitVideo(){
- const title=$("videoTitle").value.trim();
- const category=$("videoCategory").value;
- const study=category==="Bijbelstudie";
- const file=study?$("videoFile").files[0]:$("normalVideoFile").files[0];
- const reference=study?$("bibleReference").value.trim():"";
- const studyContent=study&&!file?$("studyContent").value.trim():"";
- const description=study?(file?$("videoDescription").value.trim():""):$("normalDescription").value.trim();
- const msg=$("uploadMessage");
- if(!title){msg.textContent="Vul een titel in.";return;}
- if(study&&!reference){msg.textContent="Vul het Bijbelgedeelte in.";return;}
- if(study&&!file&&!studyContent){msg.textContent="Schrijf de volledige Bijbelstudie.";return;}
- if(study&&file&&!description){msg.textContent="Geef een beschrijving van de video.";return;}
- if(!study&&!file){msg.textContent="Kies een videobestand.";return;}
- if(file&&file.size>100*1024*1024){msg.textContent="De video mag maximaal 100 MB zijn.";return;}
- const form=new FormData();
- form.append("title",title);form.append("description",description);form.append("category",category);
- if(file)form.append("video",file);
- if(study){form.append("bible_reference",reference);form.append("study_content",studyContent);}
- try{
-  const result=await api("/videos",{method:"POST",body:form});
-  msg.textContent=result.message;
-  ["videoTitle","bibleReference","studyContent","videoDescription","normalDescription","videoFile","normalVideoFile"].forEach(id=>{if($(id))$(id).value="";});
-  $("videoCategory").value="Preek";updateUploadFields();
- }catch(error){msg.textContent=error.message;}
+
+async function submitVideo() {
+const title=$("videoTitle").value.trim();
+const category=$("videoCategory").value;
+const study=category==="Bijbelstudie";
+const file=study?$("videoFile").files[0]:$("normalVideoFile").files[0];
+const reference=study?$("bibleReference").value.trim():"";
+const studyContent=study&&!file?$("studyContent").value.trim():"";
+const description=study?(file?$("videoDescription").value.trim():""):$("normalDescription").value.trim();
+const message=$("uploadMessage");message.textContent="";
+if(!title){message.textContent="Vul een titel in.";return;}
+if(study&&!reference){message.textContent="Vul het Bijbelgedeelte in.";return;}
+if(study&&!file&&studyContent.length<30){message.textContent="Schrijf je volledige Bijbelstudie (minimaal 30 tekens).";return;}
+if(study&&file&&!description){message.textContent="Geef een beschrijving van de video.";return;}
+if(!study&&!file){message.textContent="Kies een videobestand.";return;}
+if(!study&&!description){message.textContent="Vul een beschrijving bij de video in.";return;}
+if(file&&file.size>100*1024*1024){message.textContent="De video mag maximaal 100 MB zijn.";return;}
+const form=new FormData();
+form.append("title",title);form.append("description",description);form.append("category",category);
+if(file)form.append("video",file);
+if(study){form.append("bibleReference",reference);form.append("studyContent",studyContent);}
+try{
+const result=await api("/videos",{method:"POST",body:form});
+message.textContent=result.message||"Inzending verstuurd.";
+["videoTitle","bibleReference","studyContent","videoDescription","normalDescription","videoFile","normalVideoFile"].forEach(id=>{if($(id))$(id).value="";});
+$("videoCategory").value="Preek";updateUploadFields();
+}catch(error){message.textContent=error.message;}
 }
-async function renderAdmin(){if(!isAdmin())return;$("pendingVideos").textContent="Laden...";$("accounts").textContent="Laden...";$("allComments").textContent="Laden...";try{const [pending,users,comments]=await Promise.all([api("/admin/videos"),api("/admin/users"),api("/admin/comments")]);$("stats").textContent=`${users.length} accounts • ${approvedVideos.length+pending.length} video's • ${comments.length} reacties`;const pb=$("pendingVideos");pb.innerHTML="";if(!pending.length)pb.textContent="Geen video's die wachten op goedkeuring.";pending.forEach(v=>{const row=document.createElement("div");row.className="adminRow";const title=document.createElement("b");title.textContent=`${v.title} — ${v.category} — ${v.author_name||"Gebruiker"}`;row.appendChild(title);const video=document.createElement("video");video.controls=true;video.src=videoUrl(v.video_url);video.style.cssText="display:block;width:100%;max-width:420px";row.appendChild(video);const actions=document.createElement("div");actions.className="actions";const yes=document.createElement("button");yes.textContent="Goedkeuren";yes.onclick=async()=>{try{await api(`/admin/videos/${v.id}/approve`,{method:"POST"});await loadVideos();renderAdmin();}catch(e){alert(e.message);}};const no=document.createElement("button");no.textContent="Afwijzen";no.className="danger";no.onclick=async()=>{if(!confirm("Deze video verwijderen?"))return;try{await api(`/admin/videos/${v.id}`,{method:"DELETE"});renderAdmin();}catch(e){alert(e.message);}};actions.append(yes,no);row.appendChild(actions);pb.appendChild(row);});const ab=$("accounts");ab.innerHTML="";if(!users.length)ab.textContent="Nog geen bezoekersaccounts.";users.forEach(u=>{const row=document.createElement("div");row.className="adminRow";const label=document.createElement("b");label.textContent=`${u.name} — ${u.email}${u.verified?" ✔":""}`;const verify=document.createElement("button");verify.className="secondary";verify.textContent=u.verified?"Verificatie verwijderen":"Verifiëren";verify.onclick=async()=>{try{await api(`/admin/users/${u.id}/verify`,{method:"POST"});renderAdmin();}catch(e){alert(e.message);}};row.append(label,document.createElement("br"),verify);ab.appendChild(row);});const cb=$("allComments");cb.innerHTML="";if(!comments.length)cb.textContent="Nog geen reacties.";comments.forEach(c=>{const row=document.createElement("div");row.className="adminRow";const label=document.createElement("p");label.textContent=`${c.author_name} bij "${c.video_title}": ${c.comment}`;const del=document.createElement("button");del.className="danger";del.textContent="Verwijderen";del.onclick=async()=>{try{await api(`/admin/comments/${c.id}`,{method:"DELETE"});renderAdmin();}catch(e){alert(e.message);}};row.append(label,del);cb.appendChild(row);});}catch(e){$("stats").textContent=e.message;}}
-async function start(){if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js").catch(console.warn);await loadVideos();await restoreSession();}
+
+/* BEHEERDERSDASHBOARD */
+
+async function renderAdmin() {
+if(!isAdmin())return;
+$("pendingVideos").textContent="Laden...";
+$("accounts").textContent="Laden...";
+$("allComments").textContent="Laden...";
+try{
+const [pending,users,comments]=await Promise.all([api("/admin/videos"),api("/admin/users"),api("/admin/comments")]);
+$("stats").textContent=`${users.length} accounts • ${approvedVideos.length+pending.length} video's • ${comments.length} reacties`;
+const pendingBox=$("pendingVideos");pendingBox.innerHTML="";
+if(!pending.length)pendingBox.textContent="Geen video's die wachten op goedkeuring.";
+pending.forEach(video=>{
+const row=document.createElement("div");row.className="adminRow";
+const title=document.createElement("b");title.textContent=`${video.title} — ${video.category} — ${video.author_name||"Gebruiker"}`;row.appendChild(title);
+if(video.video_url){const player=document.createElement("video");player.controls=true;player.src=videoUrl(video.video_url);player.style.cssText="display:block;width:100%;max-width:420px";row.appendChild(player);}
+if(video.bible_reference){const ref=document.createElement("p");ref.textContent="Bijbelgedeelte: "+video.bible_reference;row.appendChild(ref);}
+if(video.study_content){const content=document.createElement("p");content.textContent=video.study_content;row.appendChild(content);}
+const actions=document.createElement("div");actions.className="actions";
+const yes=document.createElement("button");yes.textContent="Goedkeuren";
+yes.onclick=async()=>{try{await api(`/admin/videos/${video.id}/approve`,{method:"POST"});await loadVideos();await renderAdmin();}catch(error){alert(error.message);}};
+const no=document.createElement("button");no.textContent="Afwijzen";no.className="danger";
+no.onclick=async()=>{if(!confirm("Deze inzending verwijderen?"))return;try{await api(`/admin/videos/${video.id}`,{method:"DELETE"});await renderAdmin();}catch(error){alert(error.message);}};
+actions.append(yes,no);row.appendChild(actions);pendingBox.appendChild(row);
+});
+const accountsBox=$("accounts");accountsBox.innerHTML="";
+if(!users.length)accountsBox.textContent="Nog geen bezoekersaccounts.";
+users.forEach(user=>{
+const row=document.createElement("div");row.className="adminRow";
+const label=document.createElement("b");label.textContent=`${user.name} — ${user.email}${user.verified?" ✔":""}`;
+const verify=document.createElement("button");verify.className="secondary";verify.textContent=user.verified?"Verificatie verwijderen":"Verifiëren";
+verify.onclick=async()=>{try{await api(`/admin/users/${user.id}/verify`,{method:"POST"});await renderAdmin();}catch(error){alert(error.message);}};
+row.append(label,document.createElement("br"),verify);accountsBox.appendChild(row);
+});
+const commentsBox=$("allComments");commentsBox.innerHTML="";
+if(!comments.length)commentsBox.textContent="Nog geen reacties.";
+comments.forEach(comment=>{
+const row=document.createElement("div");row.className="adminRow";
+const label=document.createElement("p");label.textContent=`${comment.author_name} bij "${comment.video_title}": ${comment.comment}`;
+const remove=document.createElement("button");remove.className="danger";remove.textContent="Verwijderen";
+remove.onclick=async()=>{if(!confirm("Deze reactie verwijderen?"))return;try{await api(`/admin/comments/${comment.id}`,{method:"DELETE"});await renderAdmin();}catch(error){alert(error.message);}};
+row.append(label,remove);commentsBox.appendChild(row);
+});
+}catch(error){$("stats").textContent=error.message;$("pendingVideos").textContent=error.message;}
+}
+
+/* START */
+
+async function start() {
+if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js").catch(console.warn);
+await loadVideos();
+await restoreSession();
+}
 start();
 </script>
-</body></html>
+
+</body>
+</html>
