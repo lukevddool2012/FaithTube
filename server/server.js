@@ -40,7 +40,8 @@ function ensureColumn(table, column, definition) {
 
 ensureColumn("videos", "bible_reference", "TEXT");
 ensureColumn("videos", "study_content", "TEXT");
-
+ensureColumn("users", "profile_image", "TEXT");
+ensureColumn("users", "bio", "TEXT");
 // Video uploads
 const storage = multer.diskStorage({
     destination: uploadDir,
