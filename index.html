@@ -2,552 +2,1239 @@
 <html lang="nl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#211817">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="FaithTube">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#071426">
+<title>FaithTube — Het Woord, dichtbij.</title>
 <link rel="manifest" href="/manifest.json">
-<link rel="apple-touch-icon" href="/icon-192.png">
-<title>FaithTube</title>
+<link rel="icon" href="/icon-192.png">
 
 <style>
-*{box-sizing:border-box}
-body{margin:0;background:#17110f;color:white;font-family:Arial,sans-serif}
-button,input,select,textarea{font:inherit}
-button{cursor:pointer;border:0;border-radius:10px;padding:12px 17px;background:#e87991;color:#321820;font-weight:bold}
-input,select,textarea{width:100%;padding:13px;margin:7px 0;background:#302321;color:white;border:1px solid #59413e;border-radius:9px}
-textarea{min-height:90px}
+:root {
+  --navy:#071426;
+  --navy2:#0d2039;
+  --gold:#e7bd62;
+  --white:#fff;
+  --muted:#a9b5c6;
+  --line:rgba(255,255,255,.09);
+  --card:#10233c;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--navy);color:white;font-family:Arial,sans-serif}
+button,input,textarea,select{font:inherit}
+button{cursor:pointer}
 .hidden{display:none!important}
-.logo{font-size:28px;font-weight:bold}
-.logo span,.pink{color:#e87991}
-.small{color:#bcaeaa;font-size:13px}
-#loginScreen{min-height:100vh;display:grid;place-items:center;padding:20px}
-.loginBox{width:100%;max-width:420px;background:#251b19;padding:30px;border-radius:20px;border:1px solid #493936}
-header{min-height:70px;background:#211817;border-bottom:1px solid #493936;display:flex;align-items:center;justify-content:space-between;padding:12px 24px;position:sticky;top:0;z-index:10;gap:12px;flex-wrap:wrap}
-.layout{display:flex;min-height:calc(100vh - 70px)}
-aside{width:235px;flex-shrink:0;background:#211817;padding:20px}
-nav button{width:100%;text-align:left;background:transparent;color:white;margin:4px 0}
-nav button.active,nav button:hover{background:#493036}
-main{width:100%;max-width:1400px;margin:auto;padding:28px}
-h1{font-size:30px}
-.hero{min-height:310px;padding:38px;border-radius:22px;background:linear-gradient(110deg,#53333d,#291e1c 70%,#422b32);display:flex;align-items:center;justify-content:space-between}
-.heroText{max-width:570px}
-.hero h1{font-size:clamp(34px,5vw,53px);line-height:1.1}
-.hero p{color:#e1cfce;line-height:1.6}
-.heroCross{font-size:150px;color:#e87991;opacity:.6}
-.categoryGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin:20px 0 35px}
-.categoryCard,.panel,.video{background:#251b19;border:1px solid #493936;border-radius:15px}
-.categoryCard{padding:22px;cursor:pointer}
-.categoryCard span{font-size:32px;color:#e87991}
-.categoryCard p{color:#bcaeaa;font-size:13px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px}
-.video{overflow:hidden}
-.video video{width:100%;height:170px;object-fit:contain;background:#0d0b0a}
-.videoInfo{padding:15px}
-.author{font-size:13px;color:#bcaeaa}
-.verified{color:#55aaff;font-weight:bold}
-.panel{padding:20px;margin:18px 0}
-.secondary{background:#493936;color:white}
-.danger{background:#a94343;color:white}
-.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-.actions button{font-size:12px;padding:9px}
-.comment{border-top:1px solid #493936;padding:10px 0}
-.message{color:#e9b4c0;font-size:13px}
-.adminRow{padding:12px 0;border-bottom:1px solid #493936}
-.menuToggle{display:none}
-.installHelp{background:#302321;border:1px solid #59413e;border-radius:10px;padding:12px;margin-top:14px;color:#f4dce2;font-size:13px;line-height:1.5}
-@media(max-width:700px){
-.layout{display:block}
-aside{display:none;width:100%;padding:10px}
-aside.open{display:block}
-nav{display:grid;grid-template-columns:1fr 1fr}
-main{padding:16px}
-.menuToggle{display:inline-block}
-header{padding:10px 12px}
-.hero{padding:25px;min-height:270px}
-.heroCross{font-size:75px}
+
+.logo{display:flex;align-items:center;gap:10px;font-size:24px;font-weight:bold}
+.logo-icon{width:42px;height:42px;border-radius:12px;background:var(--gold);color:var(--navy);display:flex;align-items:center;justify-content:center;font-size:23px}
+.gold{color:var(--gold)}
+
+#authScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(circle at top right,#18365a,transparent 45%),var(--navy)}
+.auth-card{width:100%;max-width:430px;background:var(--navy2);padding:32px;border:1px solid var(--line);border-radius:20px;box-shadow:0 20px 70px #0005}
+.auth-subtitle{color:var(--muted);margin:15px 0 25px;line-height:1.5}
+.field{margin-bottom:15px}
+.field label{display:block;color:var(--muted);font-size:14px;margin-bottom:7px}
+.field input,.field textarea,.field select{width:100%;background:#07182d;border:1px solid var(--line);color:white;border-radius:9px;padding:13px;outline:none}
+.field input:focus,.field textarea:focus{border-color:var(--gold)}
+.primary-btn{width:100%;padding:14px;background:var(--gold);color:var(--navy);border:0;border-radius:9px;font-weight:bold}
+.auth-switch{text-align:center;margin-top:20px;color:var(--muted);font-size:14px}
+.auth-switch button{background:none;border:0;color:var(--gold);font-weight:bold}
+.error-message{color:#ff8585;margin-top:12px}
+
+#appScreen{min-height:100vh}
+.topbar{height:70px;background:#091a30;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 22px;position:sticky;top:0;z-index:20}
+.topbar-left,.topbar-right{display:flex;align-items:center;gap:15px}
+.search-box{display:flex;background:#142943;border:1px solid var(--line);border-radius:30px;padding:0 12px;width:min(350px,35vw)}
+.search-box input{background:none;border:0;outline:none;color:white;padding:11px;width:100%}
+.search-box button{background:none;border:0;color:var(--gold)}
+.profile-button{width:38px;height:38px;border-radius:50%;background:var(--gold);color:var(--navy);border:0;font-weight:bold;overflow:hidden}
+.profile-button img{width:100%;height:100%;object-fit:cover}
+
+.gold-btn{background:var(--gold);color:var(--navy);border:0;border-radius:9px;padding:11px 16px;font-weight:bold}
+.gold-btn:hover,.primary-btn:hover{background:#f4d991}
+.download-btn{white-space:nowrap}
+
+.layout{display:flex}
+.sidebar{width:225px;position:fixed;top:70px;bottom:0;overflow-y:auto;background:#091a30;border-right:1px solid var(--line);padding:18px 12px}
+.nav-label{color:#71839a;font-size:11px;font-weight:bold;letter-spacing:1px;padding:16px 12px 8px}
+.nav-item{width:100%;display:flex;align-items:center;gap:12px;padding:12px;border:0;border-radius:9px;background:transparent;color:#d4dce7;text-align:left;margin-bottom:3px}
+.nav-item:hover,.nav-item.active{background:#172e4b;color:var(--gold)}
+.nav-icon{width:20px;text-align:center;font-size:18px}
+
+.main-content{margin-left:225px;width:calc(100% - 225px);padding:26px;max-width:1700px}
+.page{display:none}
+.page.active{display:block}
+.page-heading{font-size:27px;margin-bottom:8px}
+.page-description{color:var(--muted);margin-bottom:23px;line-height:1.5}
+
+.hero{min-height:320px;border-radius:18px;padding:35px;display:flex;align-items:center;background:linear-gradient(90deg,#051120ee,#05112066),radial-gradient(circle at 80% 30%,#476b91,#122b49 55%,#071426);border:1px solid var(--line);margin-bottom:30px}
+.hero-content{max-width:550px}
+.hero-tag{display:inline-block;color:var(--gold);background:#e7bd621f;padding:7px 12px;border-radius:20px;font-size:12px;font-weight:bold;margin-bottom:16px}
+.hero h1{font-size:clamp(30px,4vw,46px);line-height:1.12;margin-bottom:14px}
+.hero p{color:#c0ccda;line-height:1.6;margin-bottom:22px}
+
+.section{margin-bottom:32px}
+.section-title{font-size:21px;margin-bottom:16px}
+.video-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:18px}
+.video-card{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;cursor:pointer}
+.video-card:hover{border-color:#e7bd6280;transform:translateY(-2px)}
+.video-thumb{width:100%;aspect-ratio:16/9;background:#1b3552;display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:38px;overflow:hidden}
+.video-thumb img{width:100%;height:100%;object-fit:cover}
+.video-info{padding:13px}
+.video-info h3{font-size:15px;margin-bottom:7px;line-height:1.4}
+.video-info p{font-size:12px;color:var(--muted);line-height:1.5}
+.category-list{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:28px}
+.category-chip{border:1px solid var(--line);background:#10233c;color:white;border-radius:30px;padding:10px 16px}
+.category-chip:hover{background:var(--gold);color:var(--navy)}
+
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:18px}
+.panel h2{font-size:20px;margin-bottom:15px}
+.panel p{color:var(--muted);line-height:1.6}
+.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
+.form-grid .full{grid-column:1/-1}
+.action-btn{border:1px solid var(--line);background:#193653;color:white;border-radius:8px;padding:9px 12px;margin:5px 5px 0 0}
+.action-btn:hover{border-color:var(--gold);color:var(--gold)}
+.danger-btn{background:#572a35;color:white;border:0;border-radius:8px;padding:9px 12px}
+.empty-state{padding:30px;text-align:center;color:var(--muted);background:var(--card);border:1px dashed var(--line);border-radius:12px}
+
+.video-player{width:100%;max-height:620px;background:#000;border-radius:12px;margin-bottom:18px}
+.video-detail-title{font-size:25px;margin-bottom:10px}
+.video-detail-meta{color:var(--muted);margin-bottom:17px}
+.comment{border-bottom:1px solid var(--line);padding:13px 0}
+.comment strong{color:var(--gold)}
+.comment p{margin-top:6px;color:#d4dce7}
+
+#toast{position:fixed;bottom:22px;right:22px;background:var(--gold);color:var(--navy);padding:13px 18px;border-radius:9px;font-weight:bold;z-index:100;display:none}
+
+@media(max-width:800px){
+ .topbar{padding:0 12px}
+ .topbar .logo{font-size:19px}
+ .sidebar{width:65px;padding:12px 6px}
+ .nav-item{justify-content:center;padding:13px 5px}
+ .nav-item span:last-child,.nav-label{display:none}
+ .main-content{margin-left:65px;width:calc(100% - 65px);padding:17px 12px}
+ .hero{padding:23px}
+ .download-btn{font-size:12px;padding:9px}
+}
+@media(max-width:520px){
+ .topbar{height:60px}
+ .topbar .logo-icon{width:34px;height:34px}
+ .sidebar{top:60px;width:55px}
+ .main-content{margin-left:55px;width:calc(100% - 55px);padding:13px 9px}
+ .search-box{width:27vw}
+ .video-grid{grid-template-columns:1fr}
+ .form-grid{grid-template-columns:1fr}
+ .form-grid .full{grid-column:auto}
+ .auth-card{padding:24px 19px}
 }
 </style>
 </head>
-
 <body>
 
-<section id="loginScreen">
-<div class="loginBox">
-<div class="logo">Faith<span>Tube</span></div>
-<p class="small">Het Woord, dichtbij.</p>
+<section id="authScreen">
+  <div class="auth-card">
+    <div class="logo"><div class="logo-icon">✝</div><span>Faith<span class="gold">Tube</span></span></div>
+    <p class="auth-subtitle">Het Woord, dichtbij. Bekijk en deel christelijke video's.</p>
 
-<button id="loginInstallButton" class="secondary" onclick="installFaithTube()">Installeer FaithTube</button>
-<div id="installHelp" class="installHelp hidden"></div>
+    <div id="loginForm">
+      <h2 style="margin-bottom:18px">Welkom terug</h2>
+      <div class="field"><label>E-mailadres</label><input id="loginEmail" type="email" placeholder="jouw@email.nl"></div>
+      <div class="field"><label>Wachtwoord</label><input id="loginPassword" type="password" placeholder="Je wachtwoord"></div>
+      <button class="primary-btn" onclick="login()">Inloggen</button>
+      <p class="auth-switch">Nog geen account? <button onclick="showRegister()">Account maken</button></p>
+    </div>
 
-<div id="loginForm">
-<h2>Welkom terug</h2>
-<p class="small">Log in om FaithTube te ontdekken.</p>
-<input id="loginEmail" type="email" placeholder="E-mailadres">
-<input id="loginPassword" type="password" placeholder="Wachtwoord">
-<button onclick="login()">Inloggen</button>
-<p class="small">Nog geen account? <a href="#" class="pink" onclick="showRegister();return false">Registreer hier</a></p>
-</div>
-
-<div id="registerForm" class="hidden">
-<h2>Maak een account</h2>
-<p class="small">Word onderdeel van FaithTube.</p>
-<input id="regName" placeholder="Je naam">
-<input id="regEmail" type="email" placeholder="E-mailadres">
-<input id="regPassword" type="password" placeholder="Wachtwoord (minimaal 8 tekens)">
-<button onclick="register()">Account maken</button>
-<p class="small">Heb je al een account? <a href="#" class="pink" onclick="showLogin();return false">Inloggen</a></p>
-</div>
-<p id="loginMessage" class="message"></p>
-</div>
+    <div id="registerForm" class="hidden">
+      <h2 style="margin-bottom:18px">Maak een account</h2>
+      <div class="field"><label>Naam</label><input id="registerName" placeholder="Je naam"></div>
+      <div class="field"><label>E-mailadres</label><input id="registerEmail" type="email" placeholder="jouw@email.nl"></div>
+      <div class="field"><label>Wachtwoord</label><input id="registerPassword" type="password" placeholder="Kies een wachtwoord"></div>
+      <button class="primary-btn" onclick="register()">Account aanmaken</button>
+      <p class="auth-switch">Heb je al een account? <button onclick="showLogin()">Inloggen</button></p>
+    </div>
+    <p id="authError" class="error-message"></p>
+  </div>
 </section>
 
-<div id="app" class="hidden">
-<header>
-<div style="display:flex;align-items:center;gap:12px">
-<button class="menuToggle secondary" onclick="toggleMenu()">☰</button>
-<div class="logo">Faith<span>Tube</span></div>
-</div>
-<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-<span id="headerUser" class="small"></span>
-<button id="headerInstallButton" class="secondary hidden" onclick="installFaithTube()">Installeer FaithTube</button>
-<button class="secondary" onclick="logout()">Uitloggen</button>
-</div>
-</header>
+<section id="appScreen" class="hidden">
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="logo"><div class="logo-icon">✝</div><span>Faith<span class="gold">Tube</span></span></div>
+    </div>
+    <div class="topbar-right">
+      <button id="installButton" class="gold-btn download-btn hidden" onclick="installFaithTube()">↓ Download app</button>
+      <div class="search-box">
+        <input id="searchInput" type="search" placeholder="Zoeken...">
+        <button onclick="searchVideos()">⌕</button>
+      </div>
+      <button class="profile-button" id="profileButton" onclick="showPage('profile')">FT</button>
+    </div>
+  </header>
 
-<div class="layout">
-<aside id="sidebar">
-<nav>
-<button class="active" onclick="showPage('home',this)">⌂ Home</button>
-<button onclick="showCategory('Alles',this)">▶ Kijken</button>
-<button onclick="showCategory('Preek',this)">✝ Preken</button>
-<button onclick="showCategory('Worship',this)">♫ Worship</button>
-<button onclick="showCategory('Bijbelstudie',this)">▤ Bijbelstudie</button>
-<button onclick="showPage('upload',this)">＋ Video uploaden</button>
-<button id="adminMenu" class="hidden" onclick="showPage('admin',this)">⚙ Beheer</button>
-</nav>
-</aside>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="nav-label">MENU</div>
+      <button class="nav-item active" onclick="showPage('home',this)"><span class="nav-icon">⌂</span><span>Home</span></button>
+      <button class="nav-item" onclick="showPage('videos',this)"><span class="nav-icon">▶</span><span>Alle video's</span></button>
 
-<main>
-<section id="homePage">
-<div class="hero">
-<div class="heroText">
-<p class="pink"><b>WELKOM BIJ FAITHTUBE</b></p>
-<h1>Geloof groeit wanneer je deelt.</h1>
-<p>Ontdek inspirerende preken, prachtige worship en Bijbelstudies. Alles op één plek.</p>
-<button onclick="showCategory('Alles')">Ontdek video's →</button>
-</div>
-<div class="heroCross">✝</div>
-</div>
+      <div class="nav-label">CATEGORIEËN</div>
+      <button class="nav-item" onclick="showCategory('Preek')"><span class="nav-icon">✝</span><span>Preken</span></button>
+      <button class="nav-item" onclick="showCategory('Worship')"><span class="nav-icon">♫</span><span>Worship</span></button>
+      <button class="nav-item" onclick="showCategory('Bijbelstudie')"><span class="nav-icon">▤</span><span>Bijbelstudie</span></button>
+      <button class="nav-item" onclick="showPage('youth',this)"><span class="nav-icon">⚡</span><span>FaithTube Youth</span></button>
 
-<h2>Ontdek op jouw manier</h2>
-<div class="categoryGrid">
-<div class="categoryCard" onclick="showCategory('Preek')"><span>✝</span><h3>Preken</h3><p>Luister naar Gods Woord.</p></div>
-<div class="categoryCard" onclick="showCategory('Worship')"><span>♫</span><h3>Worship</h3><p>Prijs en aanbid samen.</p></div>
-<div class="categoryCard" onclick="showCategory('Bijbelstudie')"><span>▤</span><h3>Bijbelstudie</h3><p>Ontdek meer uit de Bijbel.</p></div>
-</div>
-<h2>Nieuw op FaithTube</h2>
-<div id="homeVideos" class="grid"></div>
+      <div class="nav-label">MIJN FAITHTUBE</div>
+      <button class="nav-item" onclick="showPage('favorites',this)"><span class="nav-icon">♡</span><span>Favorieten</span></button>
+      <button class="nav-item" onclick="showPage('history',this)"><span class="nav-icon">◷</span><span>Kijkgeschiedenis</span></button>
+      <button class="nav-item" onclick="showPage('follows',this)"><span class="nav-icon">♧</span><span>Kanalen volgen</span></button>
+      <button class="nav-item" onclick="showPage('playlists',this)"><span class="nav-icon">☷</span><span>Afspeellijsten</span></button>
+      <button class="nav-item" onclick="showPage('notifications',this)"><span class="nav-icon">♢</span><span>Meldingen</span></button>
+
+      <div class="nav-label">ACCOUNT</div>
+      <button class="nav-item" onclick="showPage('upload',this)"><span class="nav-icon">＋</span><span>Video uploaden</span></button>
+      <button class="nav-item" onclick="showPage('profile',this)"><span class="nav-icon">◉</span><span>Mijn profiel</span></button>
+      <button class="nav-item hidden" id="adminNav" onclick="showPage('admin',this)"><span class="nav-icon">⚙</span><span>Beheerder</span></button>
+      <button class="nav-item" onclick="logout()"><span class="nav-icon">⇥</span><span>Uitloggen</span></button>
+    </aside>
+
+    <main class="main-content">
+      <section id="page-home" class="page active">
+        <div class="hero">
+          <div class="hero-content">
+            <span class="hero-tag">WELKOM BIJ FAITHTUBE</span>
+            <h1>Geloof dat <span class="gold">verbindt.</span></h1>
+            <p>Ontdek inspirerende preken, worship en Bijbelstudies. Deel het geloof en laat je bemoedigen.</p>
+            <button class="gold-btn" onclick="showPage('videos')">Ontdek video's →</button>
+          </div>
+        </div>
+        <div class="category-list">
+          <button class="category-chip" onclick="showCategory('Preek')">✝ Preken</button>
+          <button class="category-chip" onclick="showCategory('Worship')">♫ Worship</button>
+          <button class="category-chip" onclick="showCategory('Bijbelstudie')">▤ Bijbelstudie</button>
+          <button class="category-chip" onclick="showPage('youth')">⚡ Youth</button>
+        </div>
+        <div class="section"><h2 class="section-title">🔥 Populaire video's</h2><div id="popularVideos" class="video-grid"><div class="empty-state">Video's laden...</div></div></div>
+        <div class="section"><h2 class="section-title">✨ Nieuw op FaithTube</h2><div id="newVideos" class="video-grid"><div class="empty-state">Video's laden...</div></div></div>
+        <div class="panel"><h2>📖 Bijbelgedachte van vandaag</h2><p><strong class="gold">Psalm 23:1</strong></p><p>De HEER is mijn herder, het ontbreekt mij aan niets.</p></div>
+      </section>
+
+      <section id="page-videos" class="page"><h1 class="page-heading">Alle video's</h1><p class="page-description">Ontdek alle goedgekeurde video's op FaithTube.</p><div id="allVideos" class="video-grid"></div></section>
+      <section id="page-category" class="page"><h1 id="categoryTitle" class="page-heading">Categorie</h1><p class="page-description">Video's binnen deze categorie.</p><div id="categoryVideos" class="video-grid"></div></section>
+      <section id="page-watch" class="page"><div id="watchContent"></div></section>
+      <section id="page-youth" class="page"><h1 class="page-heading">⚡ FaithTube Youth</h1><p class="page-description">Inspiratie, geloof en video's voor jongeren.</p><div id="youthVideos" class="video-grid"></div></section>
+      <section id="page-favorites" class="page"><h1 class="page-heading">♡ Mijn favorieten</h1><p class="page-description">Video's die je hebt opgeslagen.</p><div id="favoriteVideos" class="video-grid"></div></section>
+      <section id="page-history" class="page"><h1 class="page-heading">◷ Kijkgeschiedenis</h1><p class="page-description">Video's die je eerder hebt bekeken.</p><div id="historyVideos" class="video-grid"></div></section>
+      <section id="page-follows" class="page"><h1 class="page-heading">♧ Kanalen die ik volg</h1><p class="page-description">Ontdek de makers die je volgt.</p><div id="followList"></div></section>
+
+      <section id="page-playlists" class="page">
+        <h1 class="page-heading">☷ Afspeellijsten</h1><p class="page-description">Maak je eigen verzamelingen video's.</p>
+        <div class="panel"><div class="field"><label>Naam van je nieuwe afspeellijst</label><input id="playlistName" placeholder="Bijvoorbeeld: Mijn favoriete worship"></div><button class="gold-btn" onclick="createPlaylist()">Afspeellijst maken</button></div>
+        <div id="playlistList"></div>
+      </section>
+
+      <section id="page-notifications" class="page"><h1 class="page-heading">♢ Meldingen</h1><p class="page-description">Bekijk je FaithTube-meldingen.</p><div id="notificationList"></div></section>
+
+      <section id="page-upload" class="page">
+        <h1 class="page-heading">＋ Video uploaden</h1><p class="page-description">Deel een preek, worship of Bijbelstudie. Een beheerder moet je inzending eerst goedkeuren.</p>
+        <div class="panel"><h2>Nieuwe video insturen</h2>
+          <div class="form-grid" style="margin-top:18px">
+            <div class="field"><label>Titel</label><input id="uploadTitle" placeholder="Titel van je video"></div>
+            <div class="field"><label>Categorie</label><select id="uploadCategory"><option value="Preek">Preek</option><option value="Worship">Worship</option><option value="Bijbelstudie">Bijbelstudie</option></select></div>
+            <div class="field full"><label>Beschrijving</label><textarea id="uploadDescription" rows="3"></textarea></div>
+            <div class="field full"><label>Videobestand (max. 100 MB)</label><input id="uploadFile" type="file" accept="video/*"></div>
+            <div class="field full"><label>Of plak een videolink</label><input id="uploadUrl" type="url" placeholder="https://..."></div>
+            <div class="field full hidden" id="bibleFields"><label>Bijbelgedeelte</label><input id="bibleReference" placeholder="Bijvoorbeeld Johannes 3:16"><label style="margin-top:12px">Inhoud Bijbelstudie</label><textarea id="studyContent" rows="5"></textarea></div>
+            <div class="field full"><button class="gold-btn" onclick="uploadVideo()">Video insturen</button></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="page-profile" class="page">
+        <h1 class="page-heading">◉ Mijn profiel</h1><p class="page-description">Beheer je naam, profielfoto en biografie.</p>
+        <div class="panel"><div class="form-grid">
+          <div class="field"><label>Naam</label><input id="profileName"></div>
+          <div class="field"><label>Link naar profielfoto</label><input id="profileImage" type="url" placeholder="https://..."></div>
+          <div class="field full"><label>Biografie</label><textarea id="profileBio" rows="4"></textarea></div>
+          <div class="field full"><button class="gold-btn" onclick="saveProfile()">Profiel opslaan</button></div>
+        </div></div>
+      </section>
+
+      <section id="page-admin" class="page">
+        <h1 class="page-heading">⚙ Beheerdersdashboard</h1><p class="page-description">Beheer video's, accounts en reacties.</p>
+        <div class="section"><h2 class="section-title">⏳ Video's die wachten op goedkeuring</h2><div id="pendingVideos"></div></div>
+        <div class="section"><h2 class="section-title">👥 Accounts beheren</h2><div id="adminUsers"></div></div>
+        <div class="section"><h2 class="section-title">💬 Reacties beheren</h2><div id="adminComments"></div></div>
+      </section>
+    </main>
+  </div>
 </section>
 
-<section id="watchPage" class="hidden">
-<h1 id="watchTitle">Alle video's</h1>
-<p class="small">Bekijk alle goedgekeurde video's op FaithTube.</p>
-<div id="videoGrid" class="grid"></div>
-</section>
-
-<section id="uploadPage" class="hidden">
-<h1>Video of Bijbelstudie uploaden</h1>
-<p class="small">Je inzending wordt eerst door een beheerder gecontroleerd.</p>
-<div class="panel">
-<label>Titel</label>
-<input id="videoTitle" placeholder="Titel van je inzending">
-<label>Categorie</label>
-<select id="videoCategory" onchange="updateUploadFields()">
-<option value="Preek">Preek</option>
-<option value="Worship">Worship</option>
-<option value="Bijbelstudie">Bijbelstudie</option>
-</select>
-
-<div id="normalVideoFields">
-<label>Videobestand</label>
-<input id="normalVideoFile" type="file" accept="video/*">
-<label>Beschrijving</label>
-<textarea id="normalDescription" placeholder="Vertel waar de video over gaat"></textarea>
-</div>
-
-<div id="bibleStudyFields" class="hidden">
-<label>Bijbelgedeelte (verplicht)</label>
-<input id="bibleReference" placeholder="Bijvoorbeeld Johannes 3:16-21">
-<label>Video (optioneel)</label>
-<input id="videoFile" type="file" accept="video/*">
-<div id="videoStudyDescription" class="hidden">
-<label>Beschrijving van de video</label>
-<textarea id="videoDescription"></textarea>
-</div>
-<div id="studyTextFields">
-<label>Volledige Bijbelstudie</label>
-<textarea id="studyContent" placeholder="Schrijf hier je volledige Bijbelstudie"></textarea>
-</div>
-</div>
-<button onclick="submitVideo()">Inzending versturen</button>
-<p id="uploadMessage" class="message"></p>
-</div>
-</section>
-
-<section id="adminPage" class="hidden">
-<h1>Beheerdersdashboard</h1>
-<div class="panel"><h2>Overzicht</h2><p id="stats"></p></div>
-<div class="panel"><h2>Video's goedkeuren</h2><div id="pendingVideos"></div></div>
-<div class="panel"><h2>Accounts beheren</h2><div id="accounts"></div></div>
-<div class="panel"><h2>Reacties beheren</h2><div id="allComments"></div></div>
-<button class="secondary" onclick="showPage('home')">Terug naar bezoekersweergave</button>
-</section>
-</main>
-</div>
-</div>
-
+<div id="toast"></div>
 <script>
-"use strict";
-
 const API_BASE = "https://fathtube-server.onrender.com";
 
-let token = sessionStorage.getItem("ft_token") || "";
+let token = sessionStorage.getItem("faithtube_token") || "";
 let currentUser = null;
-let currentCategory = "Alles";
 let approvedVideos = [];
+let favorites = [];
+let playlists = [];
+let following = [];
+let notifications = [];
 let deferredInstallPrompt = null;
 
-const $ = id => document.getElementById(id);
+async function api(path, options = {}) {
+  const headers = { ...(options.headers || {}) };
+
+  if (token) headers.Authorization = "Bearer " + token;
+
+  if (options.body && !(options.body instanceof FormData)) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  const response = await fetch(API_BASE + path, {
+    ...options,
+    headers
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data.error || data.message || "Er ging iets mis.");
+  }
+
+  return data;
+}
 
 function escapeHTML(value) {
-return String(value ?? "").replace(/[&<>"']/g, c => ({
-"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-}[c]));
+  return String(value ?? "").replace(/[&<>"']/g, character => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[character]);
 }
 
-/* INSTALLATIE ANDROID EN IPHONE */
+function toast(message) {
+  const element = document.getElementById("toast");
+  element.textContent = message;
+  element.style.display = "block";
 
-function isAppleMobile() {
-return /iphone|ipad|ipod/i.test(navigator.userAgent) ||
-(navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  clearTimeout(window.toastTimer);
+  window.toastTimer = setTimeout(() => {
+    element.style.display = "none";
+  }, 3000);
 }
 
-function showInstallHelp(message) {
-$("installHelp").textContent = message;
-$("installHelp").classList.remove("hidden");
-}
+/* INLOGGEN EN REGISTREREN */
 
-window.addEventListener("beforeinstallprompt", event => {
-event.preventDefault();
-deferredInstallPrompt = event;
-$("loginInstallButton").classList.remove("hidden");
-$("headerInstallButton").classList.remove("hidden");
-});
-
-window.addEventListener("appinstalled", () => {
-deferredInstallPrompt = null;
-$("loginInstallButton").classList.add("hidden");
-$("headerInstallButton").classList.add("hidden");
-$("installHelp").classList.add("hidden");
-});
-
-async function installFaithTube() {
-if (deferredInstallPrompt) {
-deferredInstallPrompt.prompt();
-await deferredInstallPrompt.userChoice;
-deferredInstallPrompt = null;
-$("loginInstallButton").classList.add("hidden");
-$("headerInstallButton").classList.add("hidden");
-return;
-}
-
-if (isAppleMobile()) {
-showInstallHelp("FaithTube installeren op iPhone: open deze website in Safari. Tik op de Deel-knop (vierkant met pijltje omhoog), kies 'Zet op beginscherm' en tik op 'Voeg toe'.");
-} else {
-showInstallHelp("Open het browsermenu (⋮) en kies 'App installeren' of 'Toevoegen aan startscherm'. Gebruik Chrome of Edge.");
-}
-}
-
-/* ACCOUNT AANMAKEN */
-
-async function api(path, options = {}) {
-const headers = {...(options.headers || {})};
-if (token) headers.Authorization = "Bearer " + token;
-if (options.body && !(options.body instanceof FormData)) {
-headers["Content-Type"] = "application/json";
-}
-let response;
-try {
-response = await fetch(API_BASE + path, {...options, headers});
-} catch {
-throw new Error("Kan geen verbinding maken met de FaithTube-server. Probeer het later opnieuw.");
-}
-const data = await response.json().catch(() => ({error:"De server gaf geen geldig antwoord."}));
-if (!response.ok) throw new Error(data.error || "Er ging iets mis.");
-return data;
+function showLogin() {
+  document.getElementById("loginForm").classList.remove("hidden");
+  document.getElementById("registerForm").classList.add("hidden");
+  document.getElementById("authError").textContent = "";
 }
 
 function showRegister() {
-$("loginForm").classList.add("hidden");
-$("registerForm").classList.remove("hidden");
-$("loginMessage").textContent = "";
+  document.getElementById("loginForm").classList.add("hidden");
+  document.getElementById("registerForm").classList.remove("hidden");
+  document.getElementById("authError").textContent = "";
 }
-function showLogin() {
-$("registerForm").classList.add("hidden");
-$("loginForm").classList.remove("hidden");
-$("loginMessage").textContent = "";
+
+async function login() {
+  const email = document.getElementById("loginEmail").value.trim();
+  const password = document.getElementById("loginPassword").value;
+
+  try {
+    const data = await api("/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password })
+    });
+
+    token = data.token;
+    sessionStorage.setItem("faithtube_token", token);
+    await startApp();
+  } catch (error) {
+    document.getElementById("authError").textContent = error.message;
+  }
 }
 
 async function register() {
-const name=$("regName").value.trim();
-const email=$("regEmail").value.trim();
-const password=$("regPassword").value;
-if(!name||!email||!password){$("loginMessage").textContent="Vul alle velden in.";return;}
-if(password.length<8){$("loginMessage").textContent="Je wachtwoord moet minimaal 8 tekens bevatten.";return;}
-try{
-const data=await api("/register",{method:"POST",body:JSON.stringify({name,email,password})});
-$("regName").value="";$("regEmail").value="";$("regPassword").value="";
-showLogin();$("loginMessage").textContent=(data.message||"Account aangemaakt.")+" Je kunt nu inloggen.";
-}catch(error){$("loginMessage").textContent=error.message;}
+  const name = document.getElementById("registerName").value.trim();
+  const email = document.getElementById("registerEmail").value.trim();
+  const password = document.getElementById("registerPassword").value;
+
+  if (!name || !email || !password) {
+    document.getElementById("authError").textContent = "Vul alle velden in.";
+    return;
+  }
+
+  try {
+    const data = await api("/register", {
+      method: "POST",
+      body: JSON.stringify({ name, email, password })
+    });
+
+    token = data.token;
+    sessionStorage.setItem("faithtube_token", token);
+    await startApp();
+  } catch (error) {
+    document.getElementById("authError").textContent = error.message;
+  }
 }
 
-/* INLOGGEN */
+async function startApp() {
+  try {
+    currentUser = await api("/me");
 
-async function login() {
-const email=$("loginEmail").value.trim();
-const password=$("loginPassword").value;
-if(!email||!password){$("loginMessage").textContent="Vul je e-mailadres en wachtwoord in.";return;}
-try{
-const data=await api("/login",{method:"POST",body:JSON.stringify({email,password})});
-token=data.token;currentUser=data.user;sessionStorage.setItem("ft_token",token);
-await openApp();
-}catch(error){$("loginMessage").textContent=error.message;}
-}
+    document.getElementById("authScreen").classList.add("hidden");
+    document.getElementById("appScreen").classList.remove("hidden");
 
-async function restoreSession() {
-if(!token)return;
-try{const data=await api("/me");currentUser=data.user;await openApp();}
-catch{token="";currentUser=null;sessionStorage.removeItem("ft_token");}
-}
+    document.getElementById("adminNav").classList.toggle(
+      "hidden",
+      currentUser.role !== "admin"
+    );
 
-async function openApp() {
-$("loginScreen").classList.add("hidden");
-$("app").classList.remove("hidden");
-$("headerUser").textContent=currentUser.name;
-$("adminMenu").classList.toggle("hidden",currentUser.role!=="admin");
-await loadVideos();showPage("home");
+    updateProfileButton();
+    setupUploadFields();
+
+    await loadVideos();
+    await loadPersonalData();
+
+    showPage("home");
+  } catch (error) {
+    logout();
+    toast("Log opnieuw in om verder te gaan.");
+  }
 }
 
 function logout() {
-token="";currentUser=null;sessionStorage.removeItem("ft_token");
-$("app").classList.add("hidden");$("loginScreen").classList.remove("hidden");showLogin();
+  token = "";
+  currentUser = null;
+  sessionStorage.removeItem("faithtube_token");
+
+  document.getElementById("appScreen").classList.add("hidden");
+  document.getElementById("authScreen").classList.remove("hidden");
+
+  showLogin();
 }
 
-function isAdmin() {
-return currentUser&&currentUser.role==="admin"&&currentUser.email.toLowerCase()==="lukevandendool2012@gmail.com";
+function updateProfileButton() {
+  const button = document.getElementById("profileButton");
+
+  if (currentUser.profile_image) {
+    button.innerHTML = `<img src="${escapeHTML(currentUser.profile_image)}" alt="Profiel">`;
+  } else {
+    button.textContent = (currentUser.name || "FT").substring(0, 2).toUpperCase();
+  }
 }
 
 /* PAGINA'S */
 
-function toggleMenu(){$("sidebar").classList.toggle("open");}
-function hidePages(){["homePage","watchPage","uploadPage","adminPage"].forEach(id=>$(id).classList.add("hidden"));}
+function showPage(page, clickedButton = null) {
+  document.querySelectorAll(".page").forEach(section => {
+    section.classList.remove("active");
+  });
 
-function showPage(page,button) {
-if(page==="admin"&&!isAdmin())return;
-hidePages();$(page+"Page").classList.remove("hidden");
-document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));
-if(button)button.classList.add("active");
-if(page==="home")renderHome();
-if(page==="admin")renderAdmin();
-$("sidebar").classList.remove("open");
-}
+  const target = document.getElementById("page-" + page);
+  if (target) target.classList.add("active");
 
-function showCategory(category,button) {
-currentCategory=category;
-$("watchTitle").textContent=category==="Alles"?"Alle video's":category;
-hidePages();$("watchPage").classList.remove("hidden");
-document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));
-if(button)button.classList.add("active");
-renderVideos();$("sidebar").classList.remove("open");
+  document.querySelectorAll(".nav-item").forEach(button => {
+    button.classList.remove("active");
+  });
+
+  if (clickedButton) clickedButton.classList.add("active");
+
+  if (page === "videos") renderVideoList("allVideos", approvedVideos);
+  if (page === "favorites") loadFavorites();
+  if (page === "history") loadHistory();
+  if (page === "follows") loadFollows();
+  if (page === "playlists") loadPlaylists();
+  if (page === "notifications") loadNotifications();
+  if (page === "profile") loadProfile();
+  if (page === "admin" && currentUser?.role === "admin") renderAdmin();
+  if (page === "youth") loadYouth();
 }
 
 /* VIDEO'S */
 
-function videoUrl(url) {
-if(!url)return "";
-return url.startsWith("http")?url:API_BASE+(url.startsWith("/")?url:"/"+url);
-}
-
 async function loadVideos() {
-try{approvedVideos=await api("/videos");}
-catch(error){approvedVideos=[];console.error(error);}
+  try {
+    approvedVideos = await api("/videos");
+
+    if (!Array.isArray(approvedVideos)) approvedVideos = [];
+
+    const popular = [...approvedVideos].sort(
+      (a, b) => Number(b.views_count || 0) - Number(a.views_count || 0)
+    );
+
+    renderVideoList("popularVideos", popular.slice(0, 8));
+    renderVideoList("newVideos", [...approvedVideos].slice(0, 8));
+    renderVideoList("allVideos", approvedVideos);
+  } catch (error) {
+    toast("Video's konden niet worden geladen.");
+  }
 }
 
-function sorted(list) {
-return list.slice().sort((a,b)=>Number(b.author_verified||0)-Number(a.author_verified||0)||new Date(b.created_at)-new Date(a.created_at));
+function videoCard(video) {
+  return `
+    <article class="video-card" onclick="watchVideo(${Number(video.id)})">
+      <div class="video-thumb">
+        ${video.thumbnail_url
+          ? `<img src="${escapeHTML(video.thumbnail_url)}" alt="">`
+          : "▶"}
+      </div>
+      <div class="video-info">
+        <h3>${escapeHTML(video.title)}</h3>
+        <p>${escapeHTML(video.category || "")} · ${Number(video.views_count || 0)} weergaven</p>
+        <p>${escapeHTML(video.author_name || "FaithTube gebruiker")}</p>
+      </div>
+    </article>
+  `;
 }
 
-function makeVideoCard(video) {
-const card=document.createElement("article");card.className="video";
-if(video.video_url){
-const player=document.createElement("video");player.controls=true;player.preload="metadata";player.src=videoUrl(video.video_url);card.appendChild(player);
-}
-const info=document.createElement("div");info.className="videoInfo";
-const tick=Number(video.author_verified)===1?'<span class="verified"> ✔</span>':"";
-info.innerHTML=`
-<h3>${escapeHTML(video.title)}</h3>
-<p class="small">${escapeHTML(video.category)}</p>
-<p class="author">${escapeHTML(video.author_name||"FaithTube-gebruiker")}${tick}</p>
-<p>${escapeHTML(video.description||"")}</p>
-${video.bible_reference?`<p><b>Bijbelgedeelte:</b> ${escapeHTML(video.bible_reference)}</p>`:""}
-${video.study_content?`<div class="panel">${escapeHTML(video.study_content).replace(/\n/g,"<br>")}</div>`:""}
-<h4>Reacties</h4>
-<div class="commentList"><span class="small">Reacties laden...</span></div>
-<input class="commentInput" placeholder="Schrijf een reactie...">
-<button class="commentButton">Plaatsen</button>
-<p class="message"></p>`;
-const list=info.querySelector(".commentList");
-const field=info.querySelector(".commentInput");
-const button=info.querySelector(".commentButton");
-const message=info.querySelector(".message");
-loadComments(video.id,list);
-button.onclick=async()=>{
-if(!field.value.trim())return;
-try{
-await api(`/videos/${video.id}/comments`,{method:"POST",body:JSON.stringify({comment:field.value.trim()})});
-field.value="";await loadComments(video.id,list);
-}catch(error){message.textContent=error.message;}
-};
-card.appendChild(info);return card;
+function renderVideoList(elementId, videos) {
+  const element = document.getElementById(elementId);
+  if (!element) return;
+
+  if (!videos || videos.length === 0) {
+    element.innerHTML = `<div class="empty-state">Er zijn nog geen video's.</div>`;
+    return;
+  }
+
+  element.innerHTML = videos.map(videoCard).join("");
 }
 
-async function loadComments(id,box) {
-try{
-const comments=await api(`/videos/${id}/comments`);box.innerHTML="";
-if(!comments.length){box.innerHTML='<p class="small">Nog geen reacties.</p>';return;}
-comments.forEach(comment=>{
-const row=document.createElement("div");row.className="comment";
-row.textContent=comment.author_name+": "+comment.comment;box.appendChild(row);
-});
-}catch(error){box.textContent=error.message;}
+function showCategory(category) {
+  document.getElementById("categoryTitle").textContent = category;
+
+  const videos = approvedVideos.filter(video =>
+    video.category === category
+  );
+
+  renderVideoList("categoryVideos", videos);
+  showPage("category");
 }
 
-function renderHome() {
-const box=$("homeVideos");box.innerHTML="";
-const videos=sorted(approvedVideos).slice(0,4);
-if(!videos.length){box.innerHTML='<p class="small">Er zijn nog geen goedgekeurde video’s. Kom later terug!</p>';return;}
-videos.forEach(video=>box.appendChild(makeVideoCard(video)));
+function loadYouth() {
+  const videos = approvedVideos.filter(video =>
+    String(video.category || "").toLowerCase().includes("youth")
+  );
+
+  renderVideoList("youthVideos", videos);
 }
 
-function renderVideos() {
-const box=$("videoGrid");box.innerHTML="";
-let videos=approvedVideos;
-if(currentCategory!=="Alles")videos=videos.filter(v=>v.category===currentCategory);
-videos=sorted(videos);
-if(!videos.length){box.innerHTML='<p class="small">Er zijn nog geen goedgekeurde inzendingen in deze categorie.</p>';return;}
-videos.forEach(video=>box.appendChild(makeVideoCard(video)));
+async function searchVideos() {
+  const query = document.getElementById("searchInput").value.trim();
+
+  if (!query) {
+    showPage("videos");
+    return;
+  }
+
+  try {
+    const results = await api("/videos/search?q=" + encodeURIComponent(query));
+    renderVideoList("allVideos", results);
+    showPage("videos");
+  } catch (error) {
+    toast(error.message);
+  }
 }
 
-/* UPLOADS */
+/* VIDEO BEKIJKEN */
 
-function updateUploadFields() {
-const study=$("videoCategory").value==="Bijbelstudie";
-$("bibleStudyFields").classList.toggle("hidden",!study);
-$("normalVideoFields").classList.toggle("hidden",study);
-if(study)updateStudyMode();
+async function watchVideo(id) {
+  const video = approvedVideos.find(item => Number(item.id) === Number(id));
+
+  if (!video) {
+    toast("Video niet gevonden.");
+    return;
+  }
+
+  showPage("watch");
+
+  const videoUrl = video.video_url || "";
+  let player = "";
+
+  if (videoUrl && /\.(mp4|webm|ogg)(\?.*)?$/i.test(videoUrl)) {
+    player = `
+      <video class="video-player" controls playsinline>
+        <source src="${escapeHTML(videoUrl)}">
+        Je browser kan deze video niet afspelen.
+      </video>`;
+  } else if (videoUrl) {
+    player = `
+      <div class="panel">
+        <a href="${escapeHTML(videoUrl)}" target="_blank" rel="noopener"
+           style="color:var(--gold)">Video openen ↗</a>
+      </div>`;
+  }
+
+  const study = video.study_content
+    ? `<div class="panel">
+         <h2>Bijbelstudie</h2>
+         <p>${escapeHTML(video.bible_reference || "")}</p>
+         <p style="white-space:pre-wrap;margin-top:12px">${escapeHTML(video.study_content)}</p>
+       </div>`
+    : "";
+
+  document.getElementById("watchContent").innerHTML = `
+    ${player}
+    <h1 class="video-detail-title">${escapeHTML(video.title)}</h1>
+    <p class="video-detail-meta">
+      ${escapeHTML(video.author_name || "FaithTube gebruiker")}
+      · ${escapeHTML(video.category || "")}
+      · ${Number(video.views_count || 0)} weergaven
+    </p>
+    <div class="panel">
+      <p>${escapeHTML(video.description || "Geen beschrijving.")}</p>
+      <button class="action-btn" onclick="toggleFavorite(${Number(video.id)})">♡ Favoriet</button>
+      <button class="action-btn" onclick="toggleLike(${Number(video.id)})">👍 Leuk</button>
+      <button class="action-btn" onclick="addToPlaylist(${Number(video.id)})">＋ Afspeellijst</button>
+      ${Number(video.user_id) !== Number(currentUser.id)
+        ? `<button class="action-btn" onclick="followUser(${Number(video.user_id)})">Volgen</button>`
+        : ""}
+    </div>
+    ${study}
+    <div class="panel">
+      <h2>Reacties</h2>
+      <div class="field">
+        <textarea id="commentInput" rows="3" placeholder="Schrijf een reactie..."></textarea>
+      </div>
+      <button class="gold-btn" onclick="postComment(${Number(video.id)})">Reactie plaatsen</button>
+      <div id="commentsList"></div>
+    </div>
+  `;
+
+  try {
+    await api("/videos/" + id + "/view", { method: "POST" });
+  } catch (error) {
+    console.warn(error.message);
+  }
+
+  loadComments(id);
 }
 
-function updateStudyMode() {
-const hasVideo=$("videoFile").files.length>0;
-$("studyTextFields").classList.toggle("hidden",hasVideo);
-$("videoStudyDescription").classList.toggle("hidden",!hasVideo);
-}
-$("videoFile").addEventListener("change",updateStudyMode);
+async function loadComments(videoId) {
+  try {
+    const comments = await api("/videos/" + videoId + "/comments");
+    const element = document.getElementById("commentsList");
+    if (!element) return;
 
-async function submitVideo() {
-const title=$("videoTitle").value.trim();
-const category=$("videoCategory").value;
-const study=category==="Bijbelstudie";
-const file=study?$("videoFile").files[0]:$("normalVideoFile").files[0];
-const reference=study?$("bibleReference").value.trim():"";
-const studyContent=study&&!file?$("studyContent").value.trim():"";
-const description=study?(file?$("videoDescription").value.trim():""):$("normalDescription").value.trim();
-const message=$("uploadMessage");message.textContent="";
-if(!title){message.textContent="Vul een titel in.";return;}
-if(study&&!reference){message.textContent="Vul het Bijbelgedeelte in.";return;}
-if(study&&!file&&studyContent.length<30){message.textContent="Schrijf je volledige Bijbelstudie (minimaal 30 tekens).";return;}
-if(study&&file&&!description){message.textContent="Geef een beschrijving van de video.";return;}
-if(!study&&!file){message.textContent="Kies een videobestand.";return;}
-if(!study&&!description){message.textContent="Vul een beschrijving bij de video in.";return;}
-if(file&&file.size>100*1024*1024){message.textContent="De video mag maximaal 100 MB zijn.";return;}
-const form=new FormData();
-form.append("title",title);form.append("description",description);form.append("category",category);
-if(file)form.append("video",file);
-if(study){form.append("bibleReference",reference);form.append("studyContent",studyContent);}
-try{
-const result=await api("/videos",{method:"POST",body:form});
-message.textContent=result.message||"Inzending verstuurd.";
-["videoTitle","bibleReference","studyContent","videoDescription","normalDescription","videoFile","normalVideoFile"].forEach(id=>{if($(id))$(id).value="";});
-$("videoCategory").value="Preek";updateUploadFields();
-}catch(error){message.textContent=error.message;}
+    if (!comments.length) {
+      element.innerHTML = `<p style="margin-top:15px">Nog geen reacties.</p>`;
+      return;
+    }
+
+    element.innerHTML = comments.map(comment => `
+      <div class="comment">
+        <strong>${escapeHTML(comment.author_name || comment.name || "Gebruiker")}</strong>
+        <p>${escapeHTML(comment.comment)}</p>
+      </div>
+    `).join("");
+  } catch (error) {
+    console.warn("Reacties laden mislukt:", error.message);
+  }
 }
 
+async function postComment(videoId) {
+  const input = document.getElementById("commentInput");
+  const comment = input.value.trim();
+
+  if (!comment) {
+    toast("Schrijf eerst een reactie.");
+    return;
+  }
+
+  try {
+    await api("/videos/" + videoId + "/comments", {
+      method: "POST",
+      body: JSON.stringify({ comment })
+    });
+
+    input.value = "";
+    toast("Je reactie is geplaatst!");
+    loadComments(videoId);
+  } catch (error) {
+    toast(error.message);
+  }
+}
+
+/* UPLOADEN */
+
+function setupUploadFields() {
+  const category = document.getElementById("uploadCategory");
+
+  category.addEventListener("change", () => {
+    document.getElementById("bibleFields").classList.toggle(
+      "hidden",
+      category.value !== "Bijbelstudie"
+    );
+  });
+}
+
+async function uploadVideo() {
+  const title = document.getElementById("uploadTitle").value.trim();
+  const category = document.getElementById("uploadCategory").value;
+  const description = document.getElementById("uploadDescription").value.trim();
+  const file = document.getElementById("uploadFile").files[0];
+  const url = document.getElementById("uploadUrl").value.trim();
+  const bibleReference = document.getElementById("bibleReference").value.trim();
+  const studyContent = document.getElementById("studyContent").value.trim();
+
+  if (!title) {
+    toast("Vul een titel in.");
+    return;
+  }
+
+  if (!file && !url && !(category === "Bijbelstudie" && studyContent)) {
+    toast("Kies een videobestand, videolink of schrijf een Bijbelstudie.");
+    return;
+  }
+
+  if (file && file.size > 100 * 1024 * 1024) {
+    toast("Het bestand is groter dan 100 MB.");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("title", title);
+  formData.append("category", category);
+  formData.append("description", description);
+  formData.append("bibleReference", bibleReference);
+  formData.append("studyContent", studyContent);
+
+  if (file) formData.append("video", file);
+  if (url) formData.append("videoUrl", url);
+
+  try {
+    await api("/videos", {
+      method: "POST",
+      body: formData
+    });
+
+    toast("Je video is ingestuurd en wacht op goedkeuring.");
+
+    ["uploadTitle", "uploadDescription", "uploadUrl", "bibleReference", "studyContent"]
+      .forEach(id => document.getElementById(id).value = "");
+
+    document.getElementById("uploadFile").value = "";
+  } catch (error) {
+    toast(error.message);
+  }
+}
+
+/* PROFIEL */
+
+async function loadProfile() {
+  try {
+    const profile = await api("/profile/" + currentUser.id);
+    document.getElementById("profileName").value = profile.name || "";
+    document.getElementById("profileImage").value = profile.profile_image || "";
+    document.getElementById("profileBio").value = profile.bio || "";
+  } catch (error) {
+    toast("Profiel kon niet worden geladen.");
+  }
+}
+
+async function saveProfile() {
+  const name = document.getElementById("profileName").value.trim();
+  const profileImage = document.getElementById("profileImage").value.trim();
+  const bio = document.getElementById("profileBio").value.trim();
+
+  if (!name) {
+    toast("Vul een naam in.");
+    return;
+  }
+
+  try {
+    const updated = await api("/profile", {
+      method: "PUT",
+      body: JSON.stringify({ name, profileImage, bio })
+    });
+
+    currentUser = { ...currentUser, ...updated };
+    updateProfileButton();
+    toast("Je profiel is opgeslagen!");
+  } catch (error) {
+    toast(error.message);
+  }
+}
+
+/* FAVORIETEN EN LIKES */
+
+async function loadPersonalData() {
+  try {
+    const data = await api("/favorites");
+    favorites = data.map(item => Number(item.video_id || item.id));
+  } catch {
+    favorites = [];
+  }
+}
+
+async function toggleFavorite(videoId) {
+  try {
+    if (favorites.includes(Number(videoId))) {
+      await api("/favorites/" + videoId, { method: "DELETE" });
+      favorites = favorites.filter(id => id !== Number(videoId));
+      toast("Verwijderd uit favorieten.");
+    } else {
+      await api("/favorites/" + videoId, { method: "POST" });
+      favorites.push(Number(videoId));
+      toast("Toegevoegd aan favorieten!");
+    }
+  } catch (error) {
+    toast(error.message);
+  }
+}
+
+async function loadFavorites() {
+  try {
+    const data = await api("/favorites");
+    favorites = data.map(item => Number(item.video_id || item.id));
+
+    renderVideoList(
+      "favoriteVideos",
+      approvedVideos.filter(video => favorites.includes(Number(video.id)))
+    );
+  } catch (error) {
+    toast(error.message);
+  }
+}
+
+async function toggleLike(videoId) {
+  try {
+    if (likedIds.includes(Number(videoId))) {
+      await api("/videos/" + videoId + "/like", { method: "DELETE" });
+      likedIds = likedIds.filter(id => id !== Number(videoId));
+      toast("Like verwijderd.");
+    } else {
+      await api("/videos/" + videoId + "/like", { method: "POST" });
+      likedIds.push(Number(videoId));
+      toast("Je vindt deze video leuk!");
+    }
+  } catch (error) {
+    toast(error.message);
+  }
+}
+
+/* KIJKGESCHIEDENIS */
+
+async function loadHistory() {
+  try {
+    const data = await api("/history");
+    const videos = data.map(item =>
+      approvedVideos.find(video =>
+        Number(video.id) === Number(item.video_id || item.id)
+      )
+    ).filter(Boolean);
+
+    renderVideoList("historyVideos", videos);
+  } catch (error) {
+    toast(error.message);
+  }
+}
+
+/* KANALEN VOLGEN */
+
+async function loadFollows() {
+  try {
+    following = await api("/follows");
+    const element = document.getElementById("followList");
+
+    if (!following.length) {
+      element.innerHTML = `<div class="empty-state">Je volgt nog geen kanalen.</div>`;
+      return;
+    }
+
+    element.innerHTML = following.map(user => `
+      <div class="panel">
+        <strong>${escapeHTML(user.name)}</strong>
+        <button class="action-btn" onclick="unfollowUser(${Number(user.id || user.user_id)})">Niet meer volgen</button>
+      </div>
+    `).join("");
+  } catch (error) {
+    toast(error.message);
+  }
+}
+
+async function followUser(userId) {
+  try {
+    await api("/follows/" + userId, { method: "POST" });
+    toast("Je volgt dit kanaal nu.");
+    loadFollows();
+  } catch (error) {
+    toast(error.message);
+  }
+}
+
+async function unfollowUser(userId) {
+  try {
+    await api("/follows/" + userId, { method: "DELETE" });
+    toast("Je volgt dit kanaal niet meer.");
+    loadFollows();
+  } catch (error) {
+    toast(error.message);
+  }
+}
+
+/* AFSPEELLIJSTEN */
+
+async function loadPlaylists() {
+  try {
+    playlists = await api("/playlists");
+    const element = document.getElementById("playlistList");
+
+    if (!playlists.length) {
+      element.innerHTML = `<div class="empty-state">Je hebt nog geen afspeellijsten.</div>`;
+      return;
+    }
+
+    element.innerHTML = playlists.map(playlist => `
+      <div class="panel">
+        <h2>${escapeHTML(playlist.name)}</h2>
+        <button class="action-btn" onclick="openPlaylist(${Number(playlist.id)})">Bekijken</button>
+        <button class="danger-btn" onclick="deletePlaylist(${Number(playlist.id)})">Verwijderen</button>
+      </div>
+    `).join("");
+  } catch (error) {
+    toast(error.message);
+  }
+}
+
+async function createPlaylist() {
+  const name = document.getElementById("playlistName").value.trim();
+  if (!name) {
+    toast("Vul een naam in.");
+    return;
+  }
+
+  try {
+    await api("/playlists", {
+      method: "POST",
+      body: JSON.stringify({ name })
+    });
+
+    document.getElementById("playlistName").value = "";
+    toast("Afspeellijst gemaakt!");
+    loadPlaylists();
+  } catch (error) {
+    toast(error.message);
+  }
+}
+
+async function openPlaylist(id) {
+  try {
+    const playlist = await api("/playlists/" + id);
+    const videos = (playlist.videos || []).map(item =>
+      approvedVideos.find(video =>
+        Number(video.id) === Number(item.video_id || item.id)
+      )
+    ).filter(Boolean);
+
+    document.getElementById("playlistList").innerHTML = `
+      <div class="panel">
+        <h2>${escapeHTML(playlist.name)}</h2>
+        <button class="action-btn" onclick="loadPlaylists()">← Terug</button>
+        <div class="video-grid" style="margin-top:20px">
+          ${videos.length ? videos.map(videoCard).join("") : `<div class="empty-state">Deze afspeellijst is nog leeg.</div>`}
+        </div>
+      </div>
+    `;
+  } catch (error) {
+    toast(error.message);
+  }
+}
+
+async function addToPlaylist(videoId) {
+  try {
+    if (!playlists.length) playlists = await api("/playlists");
+
+    if (!playlists.length) {
+      toast("Maak eerst een afspeellijst.");
+      showPage("playlists");
+      return;
+    }
+
+    const choices = playlists.map(p => `${p.id}: ${p.name}`).join("\n");
+    const selected = prompt("Typ het nummer van de afspeellijst:\n" + choices);
+
+    if (!selected) return;
+
+    const id = Number(selected);
+    if (!playlists.some(p => Number(p.id) === id)) {
+      toast("Ongeldige afspeellijst.");
+      return;
+    }
+
+    await api("/playlists/" + id + "/videos/" + videoId, { method: "POST" });
+    toast("Video toegevoegd aan afspeellijst!");
+  } catch (error) {
+    toast(error.message);
+  }
+}
+
+async function deletePlaylist(id) {
+  if (!confirm("Weet je zeker dat je deze afspeellijst wilt verwijderen?")) return;
+
+  try {
+    await api("/playlists/" + id, { method: "DELETE" });
+    toast("Afspeellijst verwijderd.");
+    loadPlaylists();
+  } catch (error) {
+    toast(error.message);
+  }
+}
+
+/* MELDINGEN */
+
+async function loadNotifications() {
+  try {
+    notifications = await api("/notifications");
+    const element = document.getElementById("notificationList");
+
+    if (!notifications.length) {
+      element.innerHTML = `<div class="empty-state">Je hebt nog geen meldingen.</div>`;
+      return;
+    }
+
+    element.innerHTML = notifications.map(item => `
+      <div class="panel">
+        <p>${escapeHTML(item.message || item.text || "Nieuwe melding")}</p>
+        <button class="action-btn" onclick="readNotification(${Number(item.id)})">Als gelezen markeren</button>
+      </div>
+    `).join("");
+  } catch (error) {
+    toast(error.message);
+  }
+}
+
+async function readNotification(id) {
+  try {
+    await api("/notifications/" + id + "/read", { method: "POST" });
+    loadNotifications();
+  } catch (error) {
+    toast(error.message);
+  }
+}
+</script>
+<script>
 /* BEHEERDERSDASHBOARD */
 
 async function renderAdmin() {
-if(!isAdmin())return;
-$("pendingVideos").textContent="Laden...";
-$("accounts").textContent="Laden...";
-$("allComments").textContent="Laden...";
-try{
-const [pending,users,comments]=await Promise.all([api("/admin/videos"),api("/admin/users"),api("/admin/comments")]);
-$("stats").textContent=`${users.length} accounts • ${approvedVideos.length+pending.length} video's • ${comments.length} reacties`;
-const pendingBox=$("pendingVideos");pendingBox.innerHTML="";
-if(!pending.length)pendingBox.textContent="Geen video's die wachten op goedkeuring.";
-pending.forEach(video=>{
-const row=document.createElement("div");row.className="adminRow";
-const title=document.createElement("b");title.textContent=`${video.title} — ${video.category} — ${video.author_name||"Gebruiker"}`;row.appendChild(title);
-if(video.video_url){const player=document.createElement("video");player.controls=true;player.src=videoUrl(video.video_url);player.style.cssText="display:block;width:100%;max-width:420px";row.appendChild(player);}
-if(video.bible_reference){const ref=document.createElement("p");ref.textContent="Bijbelgedeelte: "+video.bible_reference;row.appendChild(ref);}
-if(video.study_content){const content=document.createElement("p");content.textContent=video.study_content;row.appendChild(content);}
-const actions=document.createElement("div");actions.className="actions";
-const yes=document.createElement("button");yes.textContent="Goedkeuren";
-yes.onclick=async()=>{try{await api(`/admin/videos/${video.id}/approve`,{method:"POST"});await loadVideos();await renderAdmin();}catch(error){alert(error.message);}};
-const no=document.createElement("button");no.textContent="Afwijzen";no.className="danger";
-no.onclick=async()=>{if(!confirm("Deze inzending verwijderen?"))return;try{await api(`/admin/videos/${video.id}`,{method:"DELETE"});await renderAdmin();}catch(error){alert(error.message);}};
-actions.append(yes,no);row.appendChild(actions);pendingBox.appendChild(row);
-});
-const accountsBox=$("accounts");accountsBox.innerHTML="";
-if(!users.length)accountsBox.textContent="Nog geen bezoekersaccounts.";
-users.forEach(user=>{
-const row=document.createElement("div");row.className="adminRow";
-const label=document.createElement("b");label.textContent=`${user.name} — ${user.email}${user.verified?" ✔":""}`;
-const verify=document.createElement("button");verify.className="secondary";verify.textContent=user.verified?"Verificatie verwijderen":"Verifiëren";
-verify.onclick=async()=>{try{await api(`/admin/users/${user.id}/verify`,{method:"POST"});await renderAdmin();}catch(error){alert(error.message);}};
-row.append(label,document.createElement("br"),verify);accountsBox.appendChild(row);
-});
-const commentsBox=$("allComments");commentsBox.innerHTML="";
-if(!comments.length)commentsBox.textContent="Nog geen reacties.";
-comments.forEach(comment=>{
-const row=document.createElement("div");row.className="adminRow";
-const label=document.createElement("p");label.textContent=`${comment.author_name} bij "${comment.video_title}": ${comment.comment}`;
-const remove=document.createElement("button");remove.className="danger";remove.textContent="Verwijderen";
-remove.onclick=async()=>{if(!confirm("Deze reactie verwijderen?"))return;try{await api(`/admin/comments/${comment.id}`,{method:"DELETE"});await renderAdmin();}catch(error){alert(error.message);}};
-row.append(label,remove);commentsBox.appendChild(row);
-});
-}catch(error){$("stats").textContent=error.message;$("pendingVideos").textContent=error.message;}
+  if (!currentUser || currentUser.role !== "admin") {
+    toast("Je hebt geen beheerderstoegang.");
+    showPage("home");
+    return;
+  }
+
+  try {
+    const pending = await api("/admin/videos");
+    const element = document.getElementById("pendingVideos");
+
+    if (!pending.length) {
+      element.innerHTML = `<div class="empty-state">Er wachten geen video's op goedkeuring.</div>`;
+    } else {
+      element.innerHTML = pending.map(video => `
+        <div class="panel">
+          <h2>${escapeHTML(video.title)}</h2>
+          <p>${escapeHTML(video.description || "")}</p>
+          <p>Categorie: ${escapeHTML(video.category)}</p>
+          <p>Ingestuurd door: ${escapeHTML(video.author_name || "Onbekend")}</p>
+          ${video.video_url
+            ? `<a href="${escapeHTML(video.video_url)}" target="_blank" rel="noopener" style="color:var(--gold)">Video bekijken ↗</a>`
+            : ""}
+          <div style="margin-top:15px">
+            <button class="gold-btn" onclick="approveVideo(${Number(video.id)})">✓ Goedkeuren</button>
+            <button class="danger-btn" onclick="rejectVideo(${Number(video.id)})">✕ Afwijzen</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    await loadAdminUsers();
+    await loadAdminComments();
+  } catch (error) {
+    toast("Beheerdersgegevens konden niet worden geladen: " + error.message);
+  }
 }
 
-/* START */
-
-async function start() {
-if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js").catch(console.warn);
-await loadVideos();
-await restoreSession();
+async function approveVideo(id) {
+  try {
+    await api("/admin/videos/" + id + "/approve", { method: "POST" });
+    toast("Video goedgekeurd!");
+    await loadVideos();
+    renderAdmin();
+  } catch (error) {
+    toast(error.message);
+  }
 }
-start();
+
+async function rejectVideo(id) {
+  if (!confirm("Weet je zeker dat je deze video wilt afwijzen en verwijderen?")) return;
+
+  try {
+    await api("/admin/videos/" + id, { method: "DELETE" });
+    toast("Video afgewezen.");
+    await loadVideos();
+    renderAdmin();
+  } catch (error) {
+    toast(error.message);
+  }
+}
+
+/* ACCOUNTS BEHEREN */
+
+async function loadAdminUsers() {
+  try {
+    const users = await api("/admin/users");
+    const element = document.getElementById("adminUsers");
+
+    if (!users.length) {
+      element.innerHTML = `<div class="empty-state">Geen gebruikers gevonden.</div>`;
+      return;
+    }
+
+    element.innerHTML = users.map(user => `
+      <div class="panel">
+        <strong>${escapeHTML(user.name)}</strong>
+        <p>${escapeHTML(user.email)}</p>
+        <p>Rol: ${escapeHTML(user.role)}</p>
+        <p>${user.verified ? "✓ Geverifieerd" : "Niet geverifieerd"}</p>
+
+        ${!user.verified && user.role !== "admin"
+          ? `<button class="action-btn" onclick="verifyUser(${Number(user.id)})">Account verifiëren</button>`
+          : ""}
+
+        ${user.role !== "admin" && Number(user.id) !== Number(currentUser.id)
+          ? `<button class="danger-btn" onclick="deleteUser(${Number(user.id)})">Account verwijderen</button>`
+          : ""}
+      </div>
+    `).join("");
+  } catch (error) {
+    document.getElementById("adminUsers").innerHTML =
+      `<div class="empty-state">${escapeHTML(error.message)}</div>`;
+  }
+}
+
+async function verifyUser(id) {
+  try {
+    await api("/admin/users/" + id + "/verify", { method: "POST" });
+    toast("Account geverifieerd!");
+    loadAdminUsers();
+  } catch (error) {
+    toast(error.message);
+  }
+}
+
+async function deleteUser(id) {
+  if (!confirm("Weet je zeker dat je dit account wilt verwijderen? Dit kan niet ongedaan worden gemaakt.")) return;
+
+  try {
+    await api("/admin/users/" + id, { method: "DELETE" });
+    toast("Account verwijderd.");
+    loadAdminUsers();
+  } catch (error) {
+    toast(error.message);
+  }
+}
+
+/* REACTIES BEHEREN */
+
+async function loadAdminComments() {
+  try {
+    const comments = await api("/admin/comments");
+    const element = document.getElementById("adminComments");
+
+    if (!comments.length) {
+      element.innerHTML = `<div class="empty-state">Er zijn geen reacties.</div>`;
+      return;
+    }
+
+    element.innerHTML = comments.map(comment => `
+      <div class="panel">
+        <strong>${escapeHTML(comment.author_name || comment.name || "Gebruiker")}</strong>
+        <p>${escapeHTML(comment.comment)}</p>
+        <button class="danger-btn" onclick="deleteComment(${Number(comment.id)})">
+          Reactie verwijderen
+        </button>
+      </div>
+    `).join("");
+  } catch (error) {
+    const element = document.getElementById("adminComments");
+    element.innerHTML = `<div class="empty-state">${escapeHTML(error.message)}</div>`;
+  }
+}
+
+async function deleteComment(id) {
+  if (!confirm("Weet je zeker dat je deze reactie wilt verwijderen?")) return;
+
+  try {
+    await api("/admin/comments/" + id, { method: "DELETE" });
+    toast("Reactie verwijderd.");
+    loadAdminComments();
+  } catch (error) {
+    toast(error.message);
+  }
+}
+
+/* FAITHTUBE DOWNLOADEN / INSTALLEREN */
+
+window.addEventListener("beforeinstallprompt", event => {
+  event.preventDefault();
+  deferredInstallPrompt = event;
+
+  const button = document.getElementById("installButton");
+  if (button) button.classList.remove("hidden");
+});
+
+async function installFaithTube() {
+  if (!deferredInstallPrompt) {
+    alert(
+      "Je kunt FaithTube via het browsermenu installeren of toevoegen aan je beginscherm."
+    );
+    return;
+  }
+
+  deferredInstallPrompt.prompt();
+
+  const result = await deferredInstallPrompt.userChoice;
+
+  if (result.outcome === "accepted") {
+    toast("FaithTube wordt geïnstalleerd!");
+  }
+
+  deferredInstallPrompt = null;
+  document.getElementById("installButton").classList.add("hidden");
+}
+
+window.addEventListener("appinstalled", () => {
+  document.getElementById("installButton").classList.add("hidden");
+  toast("FaithTube is geïnstalleerd!");
+});
+
+/* START FAITHTUBE */
+
+document.addEventListener("DOMContentLoaded", async () => {
+  document.getElementById("searchInput").addEventListener("keydown", event => {
+    if (event.key === "Enter") searchVideos();
+  });
+
+  if (token) {
+    await startApp();
+  } else {
+    showLogin();
+  }
+});
+
+/* SERVICE WORKER */
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(error => {
+      console.log("Service worker kon niet worden gestart:", error);
+    });
+  });
+}
 </script>
 
 </body>
