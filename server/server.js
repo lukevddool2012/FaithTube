@@ -29,7 +29,7 @@ app.use(cors());
 app.use(express.json({ limit: "1mb" }));
 app.use("/uploads", express.static(uploadDir));
 
-// Extra velden voor geschreven Bijbelstudies
+// Extra databasevelden voor Bijbelstudies
 function ensureColumn(table, column, definition) {
     const columns = db.prepare(`PRAGMA table_info(${table})`).all();
 
@@ -41,7 +41,7 @@ function ensureColumn(table, column, definition) {
 ensureColumn("videos", "bible_reference", "TEXT");
 ensureColumn("videos", "study_content", "TEXT");
 
-// Uploadinstellingen
+// Video uploads
 const storage = multer.diskStorage({
     destination: uploadDir,
     filename: (req, file, callback) => {
@@ -61,7 +61,7 @@ const upload = multer({
     }
 });
 
-// Controleren of iemand is ingelogd
+// Inlogcontrole
 function authenticate(req, res, next) {
     const header = req.headers.authorization;
 
@@ -77,7 +77,7 @@ function authenticate(req, res, next) {
     }
 }
 
-// Alleen beheerder toestaan
+// Beheerderscontrole
 function adminOnly(req, res, next) {
     if (
         req.user.role !== "admin" ||
@@ -98,12 +98,12 @@ function getUser(id) {
     `).get(id);
 }
 
-// Startpagina server
+// Server startpagina
 app.get("/", (req, res) => {
     res.send("Welkom bij de FaithTube-server!");
 });
 
-// REGISTREREN
+// ACCOUNT REGISTREREN
 app.post("/register", async (req, res) => {
     try {
         const { name, email, password } = req.body;
@@ -287,7 +287,6 @@ app.post("/videos", authenticate, upload.single("video"), (req, res) => {
                     error: "Schrijf je volledige Bijbelstudie (minimaal 30 tekens)."
                 });
             }
-
         } else {
             if (!hasVideo) {
                 return res.status(400).json({ error: "Kies een videobestand." });
@@ -311,14 +310,8 @@ app.post("/videos", authenticate, upload.single("video"), (req, res) => {
         const result = db.prepare(`
             INSERT INTO videos
             (
-                title,
-                description,
-                category,
-                video_url,
-                user_id,
-                approved,
-                bible_reference,
-                study_content
+                title, description, category, video_url,
+                user_id, approved, bible_reference, study_content
             )
             VALUES (?, ?, ?, ?, ?, 0, ?, ?)
         `).run(
@@ -347,7 +340,7 @@ app.post("/videos", authenticate, upload.single("video"), (req, res) => {
     }
 });
 
-// GOEDGEKEURDE VIDEO'S BEKIJKEN
+// GOEDGEKEURDE VIDEO'S
 app.get("/videos", (req, res) => {
     const videos = db.prepare(`
         SELECT
@@ -363,7 +356,7 @@ app.get("/videos", (req, res) => {
     res.json(videos);
 });
 
-// WACHTENDE VIDEO'S VOOR BEHEERDER
+// WACHTENDE VIDEO'S BEHEERDER
 app.get("/admin/videos", authenticate, adminOnly, (req, res) => {
     const videos = db.prepare(`
         SELECT videos.*, users.name AS author_name
@@ -406,7 +399,7 @@ app.delete("/admin/videos/:id", authenticate, adminOnly, (req, res) => {
     res.json({ success: true });
 });
 
-// REACTIES BIJ EEN VIDEO
+// REACTIES BIJ VIDEO
 app.get("/videos/:id/comments", (req, res) => {
     const comments = db.prepare(`
         SELECT
@@ -474,6 +467,44 @@ app.post("/admin/users/:id/verify", authenticate, adminOnly, (req, res) => {
     ).run(req.params.id);
 
     res.json({ success: result.changes > 0 });
+});
+
+// BEZOEKERSACCOUNT VERWIJDEREN
+app.delete("/admin/users/:id", authenticate, adminOnly, (req, res) => {
+    const userId = Number(req.params.id);
+
+    if (!Number.isInteger(userId) || userId <= 0) {
+        return res.status(400).json({ error: "Ongeldig account." });
+    }
+
+    const user = db.prepare(
+        "SELECT id FROM users WHERE id = ?"
+    ).get(userId);
+
+    if (!user) {
+        return res.status(404).json({ error: "Account niet gevonden." });
+    }
+
+    const removeAccount = db.transaction(() => {
+        db.prepare(
+            "DELETE FROM comments WHERE user_id = ?"
+        ).run(userId);
+
+        db.prepare(
+            "UPDATE videos SET user_id = NULL WHERE user_id = ?"
+        ).run(userId);
+
+        db.prepare(
+            "DELETE FROM users WHERE id = ?"
+        ).run(userId);
+    });
+
+    removeAccount();
+
+    res.json({
+        success: true,
+        message: "Het bezoekersaccount is verwijderd."
+    });
 });
 
 // ALLE REACTIES BEHEREN
