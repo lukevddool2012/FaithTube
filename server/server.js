@@ -225,7 +225,90 @@ app.post("/login", async (req, res) => {
         res.status(500).json({ error: "Inloggen is mislukt." });
     }
 });
+// PROFIEL BEKIJKEN
+app.get("/profile/:id", authenticate, (req, res) => {
+    const user = db.prepare(`
+        SELECT id, name, profile_image, bio, verified
+        FROM users
+        WHERE id = ?
+    `).get(req.params.id);
 
+    if (!user) {
+        return res.status(404).json({
+            error: "Profiel niet gevonden."
+        });
+    }
+
+    res.json({ user });
+});
+
+// EIGEN PROFIEL AANPASSEN
+app.put("/profile", authenticate, (req, res) => {
+    if (req.user.role === "admin") {
+        return res.status(403).json({
+            error: "Dit profiel kan niet op deze manier worden aangepast."
+        });
+    }
+
+    const { name, bio, profileImage } = req.body;
+
+    if (
+        typeof name !== "string" ||
+        name.trim().length < 2 ||
+        name.trim().length > 60
+    ) {
+        return res.status(400).json({
+            error: "Je naam moet tussen 2 en 60 tekens bevatten."
+        });
+    }
+
+    if (bio !== undefined && (
+        typeof bio !== "string" || bio.length > 500
+    )) {
+        return res.status(400).json({
+            error: "Je biografie mag maximaal 500 tekens bevatten."
+        });
+    }
+
+    if (profileImage !== undefined && (
+        typeof profileImage !== "string" ||
+        profileImage.length > 500000
+    )) {
+        return res.status(400).json({
+            error: "De profielfoto is ongeldig of te groot."
+        });
+    }
+
+    const result = db.prepare(`
+        UPDATE users
+        SET name = ?,
+            bio = ?,
+            profile_image = ?
+        WHERE id = ?
+    `).run(
+        name.trim(),
+        bio || "",
+        profileImage || "",
+        req.user.id
+    );
+
+    if (!result.changes) {
+        return res.status(404).json({
+            error: "Account niet gevonden."
+        });
+    }
+
+    const user = db.prepare(`
+        SELECT id, name, profile_image, bio, verified
+        FROM users
+        WHERE id = ?
+    `).get(req.user.id);
+
+    res.json({
+        message: "Je profiel is opgeslagen!",
+        user
+    });
+});
 // EIGEN ACCOUNT BEKIJKEN
 app.get("/me", authenticate, (req, res) => {
     if (req.user.role === "admin") {
