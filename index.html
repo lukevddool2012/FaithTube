@@ -757,18 +757,6 @@ async function loadProfile() {
   const adminNotice = document.getElementById("adminProfileNotice");
   const saveRow = document.getElementById("saveProfileRow");
 
-  if (currentUser.role === "admin") {
-    nameField.value = currentUser.name || "FaithTube-beheerder";
-    imageField.value = "";
-    bioField.value = "";
-    nameField.disabled = true;
-    imageField.disabled = true;
-    bioField.disabled = true;
-    adminNotice.classList.remove("hidden");
-    saveRow.classList.add("hidden");
-    return;
-  }
-
   nameField.disabled = false;
   imageField.disabled = false;
   bioField.disabled = false;
@@ -780,8 +768,8 @@ async function loadProfile() {
     const profile = profileResponse.user || profileResponse;
 
     nameField.value = profile.name || currentUser.name || "";
-    imageField.value = profile.profile_image || "";
-    bioField.value = profile.bio || "";
+    imageField.value = profile.profile_image || currentUser.profile_image || "";
+    bioField.value = profile.bio || currentUser.bio || "";
   } catch (error) {
     console.error("FaithTube profiel laden mislukt:", error);
     toast("Profiel laden mislukt: " + error.message);
