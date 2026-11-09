@@ -14,7 +14,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const JWT_SECRET = process.env.JWT_SECRET;
-const ADMIN_EMAIL = "lukevandendool2012@gmail.com";
+const ADMIN_EMAIL = "liekevan2020@gmail.com";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
 if (!JWT_SECRET || !ADMIN_PASSWORD) {
@@ -112,6 +112,9 @@ function authenticate(req, res, next) {
 
     try {
         req.user = jwt.verify(header.slice(7), JWT_SECRET);
+        if (req.user.role !== "admin" && !getUser(req.user.id)) {
+            return res.status(401).json({ error: "Dit account bestaat niet meer. Maak een nieuw account aan." });
+        }
         next();
     } catch {
         return res.status(401).json({ error: "Je sessie is ongeldig." });
@@ -183,8 +186,17 @@ app.post("/register", async (req, res) => {
             VALUES (?, ?, ?, 'visitor')
         `).run(name.trim(), normalizedEmail, hash);
 
+        const token = jwt.sign({
+            id: result.lastInsertRowid,
+            name: name.trim(),
+            email: normalizedEmail,
+            role: "visitor",
+            verified: false
+        }, JWT_SECRET, { expiresIn: "30d" });
+
         res.status(201).json({
             message: "Je account is aangemaakt!",
+            token,
             userId: result.lastInsertRowid
         });
 
@@ -216,7 +228,7 @@ app.post("/login", async (req, res) => {
                 email: ADMIN_EMAIL,
                 role: "admin",
                 verified: true
-            }, JWT_SECRET, { expiresIn: "7d" });
+            }, JWT_SECRET, { expiresIn: "30d" });
 
             return res.json({
                 token,
@@ -247,7 +259,7 @@ app.post("/login", async (req, res) => {
             email: user.email,
             role: "visitor",
             verified: Boolean(user.verified)
-        }, JWT_SECRET, { expiresIn: "7d" });
+        }, JWT_SECRET, { expiresIn: "30d" });
 
         res.json({
             token,
@@ -265,6 +277,38 @@ app.post("/login", async (req, res) => {
         res.status(500).json({ error: "Inloggen is mislukt." });
     }
 });
+
+ // EIGEN ACCOUNT DEFINITIEF VERWIJDEREN
+app.delete("/account", authenticate, (req, res) => {
+    if (req.user.role === "admin" || req.user.id === "faithtube-main-admin") {
+        return res.status(403).json({ error: "Het beheerdersaccount kan niet via deze functie worden verwijderd." });
+    }
+    const userId = Number(req.user.id);
+    const ownedVideos = db.prepare("SELECT video_url FROM videos WHERE user_id = ?").all(userId);
+    const removeAccount = db.transaction(() => {
+        db.prepare("DELETE FROM comments WHERE user_id = ?").run(userId);
+        db.prepare("DELETE FROM comments WHERE video_id IN (SELECT id FROM videos WHERE user_id = ?)").run(userId);
+        db.prepare("DELETE FROM follows WHERE follower_id = ? OR followed_id = ?").run(userId, userId);
+        db.prepare("DELETE FROM watch_history WHERE user_id = ?").run(userId);
+        db.prepare("DELETE FROM notifications WHERE user_id = ?").run(userId);
+        db.prepare("DELETE FROM videos WHERE user_id = ?").run(userId);
+        db.prepare("DELETE FROM users WHERE id = ?").run(userId);
+    });
+    try {
+        removeAccount();
+        for (const video of ownedVideos) {
+            if (video.video_url && video.video_url.startsWith("/uploads/")) {
+                const filePath = path.join(uploadDir, path.basename(video.video_url));
+                if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+            }
+        }
+        res.json({ success: true, message: "Je account en de bijbehorende gegevens zijn definitief verwijderd." });
+    } catch (error) {
+        console.error("Account verwijderen mislukt:", error);
+        res.status(500).json({ error: "Je account kon niet worden verwijderd. Probeer het later opnieuw." });
+    }
+});
+
 // PROFIEL BEKIJKEN
 app.get("/profile/:id", authenticate, (req, res) => {
     if (req.user.role === "admin" && req.params.id === req.user.id) {
