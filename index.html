@@ -1218,19 +1218,34 @@ async function loadNotifications() {
   try {
     notifications = await api("/notifications");
     const element = document.getElementById("notificationList");
+    const isAdmin = currentUser && currentUser.role === "admin";
+    const pendingVideos = isAdmin ? await api("/admin/videos") : [];
+    const pendingById = new Map(pendingVideos.map(video => [Number(video.id), video]));
 
     if (!notifications.length) {
       element.innerHTML = `<div class="empty-state">Je hebt nog geen meldingen.</div>`;
       return;
     }
 
-    element.innerHTML = notifications.map(item => `
-      <div class="panel" style="${item.is_read ? "opacity:.65" : "border-color:var(--gold)"}">
-        <p>${escapeHTML(item.message || item.text || "Nieuwe melding")}</p>
-        ${item.video_id ? `<p class="page-description">Deze video wacht op jouw goedkeuring in het beheerdersdashboard.</p>` : ""}
-        ${item.is_read ? "<span class='page-description'>Gelezen</span>" : `<button class="action-btn" onclick="readNotification(${Number(item.id)})">Als gelezen markeren</button>`}
-      </div>
-    `).join("");
+    element.innerHTML = notifications.map(item => {
+      const video = item.video_id ? pendingById.get(Number(item.video_id)) : null;
+      return `
+        <div class="panel" style="${item.is_read ? "opacity:.8" : "border-color:var(--gold)"}">
+          <p>${escapeHTML(item.message || item.text || "Nieuwe melding")}</p>
+          ${video ? `
+            <h3 style="margin-top:12px">${escapeHTML(video.title)}</h3>
+            <p>${escapeHTML(video.description || "")}</p>
+            <p class="page-description">Categorie: ${escapeHTML(video.category)} · Ingestuurd door: ${escapeHTML(video.author_name || "Onbekend")}</p>
+            ${video.video_url ? `<video controls playsinline preload="metadata" style="display:block;width:100%;max-height:360px;margin:12px 0;border-radius:12px;background:#000"><source src="${API_BASE + escapeHTML(video.video_url)}">Je browser kan deze video niet afspelen.</video>` : (video.study_content ? `<div class="panel"><strong>Inhoud Bijbelstudie</strong><p>${escapeHTML(video.study_content)}</p></div>` : "")}
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
+              <button class="gold-btn" onclick="approveVideo(${Number(video.id)})">✓ Goedkeuren</button>
+              <button class="danger-btn" onclick="rejectVideo(${Number(video.id)})">✕ Afwijzen</button>
+            </div>
+          ` : (item.video_id && isAdmin ? `<p class="page-description">Deze video is al beoordeeld of verwijderd.</p>` : "")}
+          ${item.is_read ? "<span class='page-description'>Gelezen</span>" : `<button class="action-btn" style="margin-top:12px" onclick="readNotification(${Number(item.id)})">Als gelezen markeren</button>`}
+        </div>
+      `;
+    }).join("");
   } catch (error) {
     toast(error.message);
   }
@@ -1294,6 +1309,7 @@ async function approveVideo(id) {
     toast("Video goedgekeurd!");
     await loadVideos();
     renderAdmin();
+    if (currentUser && currentUser.role === "admin") await loadNotifications();
   } catch (error) {
     toast(error.message);
   }
@@ -1307,6 +1323,7 @@ async function rejectVideo(id) {
     toast("Video afgewezen.");
     await loadVideos();
     renderAdmin();
+    if (currentUser && currentUser.role === "admin") await loadNotifications();
   } catch (error) {
     toast(error.message);
   }
