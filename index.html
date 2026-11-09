@@ -462,6 +462,7 @@ async function startApp() {
     showPage("home");
     loadVideos();
     loadPersonalData();
+    loadNotifications();
   } catch (error) {
     logout();
     toast("Log opnieuw in om verder te gaan.");
