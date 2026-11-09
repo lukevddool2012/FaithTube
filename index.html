@@ -241,7 +241,7 @@ button{cursor:pointer}
             <div class="field"><label>Titel</label><input id="uploadTitle" placeholder="Titel van je video"></div>
             <div class="field"><label>Categorie</label><select id="uploadCategory"><option value="Preek">Preek</option><option value="Worship">Worship</option><option value="Bijbelstudie">Bijbelstudie</option></select></div>
             <div class="field full"><label>Beschrijving</label><textarea id="uploadDescription" rows="3"></textarea></div>
-            <div class="field full"><label>Videobestand (maximaal 3 uur, maximaal 500 MB)</label><input id="uploadFile" type="file" accept="video/*"></div>
+            <div class="field full"><label>Videobestand (maximaal 500 MB)</label><input id="uploadFile" type="file" accept="video/*"></div>
             <div class="field full"><label>Of plak een videolink</label><input id="uploadUrl" type="url" placeholder="https://..."></div>
             <div class="field full hidden" id="bibleFields"><label>Bijbelgedeelte</label><input id="bibleReference" placeholder="Bijvoorbeeld Johannes 3:16"><label style="margin-top:12px">Inhoud Bijbelstudie</label><textarea id="studyContent" rows="5"></textarea></div>
             <div class="field full">
@@ -810,15 +810,7 @@ async function uploadVideo() {
 
   if (file) {
     try {
-      const duration = await getVideoDuration(file);
-      if (!Number.isFinite(duration) || duration <= 0) {
-        toast("De lengte van deze video kon niet worden gelezen.");
-        return;
-      }
-      if (duration > 3 * 60 * 60) {
-        toast("Je video mag maximaal 3 uur duren.");
-        return;
-      }
+      // Geen maximale videoduur ingesteld.
     } catch (error) {
       toast("Deze video kon niet worden gecontroleerd. Probeer een ander videobestand.");
       return;
@@ -1233,9 +1225,10 @@ async function loadNotifications() {
     }
 
     element.innerHTML = notifications.map(item => `
-      <div class="panel">
+      <div class="panel" style="${item.is_read ? "opacity:.65" : "border-color:var(--gold)"}">
         <p>${escapeHTML(item.message || item.text || "Nieuwe melding")}</p>
-        <button class="action-btn" onclick="readNotification(${Number(item.id)})">Als gelezen markeren</button>
+        ${item.video_id ? `<p class="page-description">Deze video wacht op jouw goedkeuring in het beheerdersdashboard.</p>` : ""}
+        ${item.is_read ? "<span class='page-description'>Gelezen</span>" : `<button class="action-btn" onclick="readNotification(${Number(item.id)})">Als gelezen markeren</button>`}
       </div>
     `).join("");
   } catch (error) {
