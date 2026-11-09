@@ -43,6 +43,7 @@ ensureColumn("videos", "study_content", "TEXT");
 ensureColumn("users", "profile_image", "TEXT");
 ensureColumn("users", "bio", "TEXT");
 ensureColumn("videos", "views_count", "INTEGER NOT NULL DEFAULT 0");
+ensureColumn("videos", "thumbnail_url", "TEXT");
 
 // Kanalen volgen
 db.exec(`
@@ -589,20 +590,39 @@ app.post("/videos", authenticate, upload.single("video"), (req, res) => {
             return res.status(401).json({ error: "Account niet gevonden." });
         }
 
+        let thumbnailUrl = "";
+        if (typeof req.body.thumbnailData === "string" && req.body.thumbnailData) {
+            const match = req.body.thumbnailData.match(/^data:image\\/(jpeg|png|webp);base64,([A-Za-z0-9+/=]+)$/);
+            if (!match) {
+                if (req.file) fs.unlinkSync(req.file.path);
+                return res.status(400).json({ error: "De thumbnail moet een JPG-, PNG- of WebP-afbeelding zijn." });
+            }
+            const imageBuffer = Buffer.from(match[2], "base64");
+            if (!imageBuffer.length || imageBuffer.length > 3 * 1024 * 1024) {
+                if (req.file) fs.unlinkSync(req.file.path);
+                return res.status(400).json({ error: "De thumbnail mag maximaal 3 MB zijn." });
+            }
+            const extension = match[1] === "jpeg" ? "jpg" : match[1];
+            const thumbnailFilename = `thumbnail-${Date.now()}-${require("crypto").randomUUID()}.${extension}`;
+            fs.writeFileSync(path.join(uploadDir, thumbnailFilename), imageBuffer);
+            thumbnailUrl = `/uploads/${thumbnailFilename}`;
+        }
+
         const videoUrl = hasVideo ? `/uploads/${req.file.filename}` : "";
 
         const result = db.prepare(`
             INSERT INTO videos
             (
-                title, description, category, video_url,
+                title, description, category, video_url, thumbnail_url,
                 user_id, approved, bible_reference, study_content
             )
-            VALUES (?, ?, ?, ?, ?, 0, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)
         `).run(
             title.trim(),
             (description || "").trim(),
             category,
             videoUrl,
+            thumbnailUrl,
             req.user.role === "admin" ? null : req.user.id,
             category === "Bijbelstudie" ? bibleReference.trim() : null,
             category === "Bijbelstudie" && !hasVideo ? studyContent.trim() : null
