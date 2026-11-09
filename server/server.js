@@ -22,7 +22,7 @@ if (!JWT_SECRET || !ADMIN_PASSWORD) {
     process.exit(1);
 }
 
-const uploadDir = path.join(__dirname, "uploads");
+const uploadDir = process.env.UPLOAD_DIR || path.join(__dirname, "uploads");
 fs.mkdirSync(uploadDir, { recursive: true });
 
 app.use(cors());
