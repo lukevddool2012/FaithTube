@@ -241,7 +241,7 @@ button{cursor:pointer}
             <div class="field"><label>Titel</label><input id="uploadTitle" placeholder="Titel van je video"></div>
             <div class="field"><label>Categorie</label><select id="uploadCategory"><option value="Preek">Preek</option><option value="Worship">Worship</option><option value="Bijbelstudie">Bijbelstudie</option></select></div>
             <div class="field full"><label>Beschrijving</label><textarea id="uploadDescription" rows="3"></textarea></div>
-            <div class="field full"><label>Videobestand (maximaal 3 uur, maximaal 100 MB)</label><input id="uploadFile" type="file" accept="video/*"></div>
+            <div class="field full"><label>Videobestand (maximaal 3 uur, maximaal 500 MB)</label><input id="uploadFile" type="file" accept="video/*"></div>
             <div class="field full"><label>Of plak een videolink</label><input id="uploadUrl" type="url" placeholder="https://..."></div>
             <div class="field full hidden" id="bibleFields"><label>Bijbelgedeelte</label><input id="bibleReference" placeholder="Bijvoorbeeld Johannes 3:16"><label style="margin-top:12px">Inhoud Bijbelstudie</label><textarea id="studyContent" rows="5"></textarea></div>
             <div class="field full"><button class="gold-btn" onclick="uploadVideo()">Video insturen</button></div>
@@ -763,8 +763,8 @@ async function uploadVideo() {
     return;
   }
 
-  if (file && file.size > 100 * 1024 * 1024) {
-    toast("Het bestand is groter dan 100 MB. Voor langere video's kun je voorlopig een videolink gebruiken.");
+  if (file && file.size > 500 * 1024 * 1024) {
+    toast("Het bestand is groter dan 500 MB. Kies een kleiner videobestand.");
     return;
   }
 
