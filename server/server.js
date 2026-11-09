@@ -42,6 +42,14 @@ ensureColumn("videos", "bible_reference", "TEXT");
 ensureColumn("videos", "study_content", "TEXT");
 ensureColumn("users", "profile_image", "TEXT");
 ensureColumn("users", "bio", "TEXT");
+
+// Bewaar profielgegevens van het aparte beheerdersaccount.
+db.exec(`CREATE TABLE IF NOT EXISTS admin_profile (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    name TEXT NOT NULL,
+    profile_image TEXT DEFAULT "",
+    bio TEXT DEFAULT ""
+)`);
 // Video uploads
 const storage = multer.diskStorage({
     destination: uploadDir,
@@ -227,6 +235,24 @@ app.post("/login", async (req, res) => {
 });
 // PROFIEL BEKIJKEN
 app.get("/profile/:id", authenticate, (req, res) => {
+    if (req.user.role === "admin" && req.params.id === req.user.id) {
+        const saved = db.prepare(
+            "SELECT name, profile_image, bio FROM admin_profile WHERE id = 1"
+        ).get() || {};
+
+        return res.json({
+            user: {
+                id: req.user.id,
+                name: saved.name || req.user.name,
+                profile_image: saved.profile_image || "",
+                bio: saved.bio || "",
+                verified: true,
+                role: "admin",
+                email: req.user.email
+            }
+        });
+    }
+
     const user = db.prepare(`
         SELECT id, name, profile_image, bio, verified
         FROM users
@@ -244,13 +270,58 @@ app.get("/profile/:id", authenticate, (req, res) => {
 
 // EIGEN PROFIEL AANPASSEN
 app.put("/profile", authenticate, (req, res) => {
-    if (req.user.role === "admin") {
-        return res.status(403).json({
-            error: "Dit profiel kan niet op deze manier worden aangepast."
+    const { name, bio, profileImage } = req.body;
+
+    if (
+        typeof name !== "string" ||
+        name.trim().length < 2 ||
+        name.trim().length > 60
+    ) {
+        return res.status(400).json({
+            error: "Je naam moet tussen 2 en 60 tekens bevatten."
         });
     }
 
-    const { name, bio, profileImage } = req.body;
+    if (bio !== undefined && (
+        typeof bio !== "string" || bio.length > 500
+    )) {
+        return res.status(400).json({
+            error: "Je biografie mag maximaal 500 tekens bevatten."
+        });
+    }
+
+    if (profileImage !== undefined && (
+        typeof profileImage !== "string" ||
+        profileImage.length > 500000
+    )) {
+        return res.status(400).json({
+            error: "De profielfoto is ongeldig of te groot."
+        });
+    }
+
+    if (req.user.role === "admin") {
+        db.prepare(`
+            INSERT INTO admin_profile (id, name, profile_image, bio)
+            VALUES (1, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                name = excluded.name,
+                profile_image = excluded.profile_image,
+                bio = excluded.bio
+        `).run(name.trim(), profileImage || "", bio || "");
+
+        return res.json({
+            message: "Je beheerderprofiel is opgeslagen!",
+            user: {
+                id: req.user.id,
+                name: name.trim(),
+                profile_image: profileImage || "",
+                bio: bio || "",
+                verified: true,
+                role: "admin",
+                email: req.user.email
+            }
+        });
+    }
 
     if (
         typeof name !== "string" ||
@@ -312,7 +383,18 @@ app.put("/profile", authenticate, (req, res) => {
 // EIGEN ACCOUNT BEKIJKEN
 app.get("/me", authenticate, (req, res) => {
     if (req.user.role === "admin") {
-        return res.json({ user: req.user });
+        const saved = db.prepare(
+            "SELECT name, profile_image, bio FROM admin_profile WHERE id = 1"
+        ).get() || {};
+
+        return res.json({
+            user: {
+                ...req.user,
+                name: saved.name || req.user.name,
+                profile_image: saved.profile_image || "",
+                bio: saved.bio || ""
+            }
+        });
     }
 
     const user = getUser(req.user.id);
