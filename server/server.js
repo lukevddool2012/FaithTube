@@ -136,7 +136,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
     storage,
-    limits: { fileSize: 500 * 1024 * 1024 },
+    limits: { fileSize: 500 * 1024 * 1024, fieldSize: 5 * 1024 * 1024 },
     fileFilter: (req, file, callback) => {
         if (!file.mimetype.startsWith("video/")) {
             return callback(new Error("Alleen videobestanden zijn toegestaan."));
