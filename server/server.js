@@ -44,6 +44,17 @@ ensureColumn("users", "profile_image", "TEXT");
 ensureColumn("users", "bio", "TEXT");
 ensureColumn("videos", "views_count", "INTEGER NOT NULL DEFAULT 0");
 
+// Kanalen volgen
+db.exec(`
+    CREATE TABLE IF NOT EXISTS follows (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        follower_id INTEGER NOT NULL,
+        followed_id INTEGER NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(follower_id, followed_id)
+    );
+`);
+
 // Kijkgeschiedenis en meldingen
 db.exec(`
     CREATE TABLE IF NOT EXISTS watch_history (
@@ -525,6 +536,77 @@ app.post("/videos", authenticate, upload.single("video"), (req, res) => {
 
         res.status(500).json({ error: "Je inzending is mislukt." });
     }
+});
+
+// KANALEN MET GOEDGEKEURDE VIDEO'S
+app.get("/channels", authenticate, (req, res) => {
+    const channels = db.prepare(`
+        SELECT
+            users.id,
+            users.name,
+            users.profile_image,
+            users.bio,
+            users.verified,
+            COUNT(videos.id) AS video_count,
+            MAX(videos.created_at) AS latest_video
+        FROM users
+        INNER JOIN videos ON videos.user_id = users.id
+        WHERE videos.approved = 1
+        GROUP BY users.id
+        ORDER BY latest_video DESC
+    `).all();
+
+    res.json(channels);
+});
+
+// KANALEN DIE IK VOLG
+app.get("/follows", authenticate, (req, res) => {
+    if (req.user.role === "admin") return res.json([]);
+
+    const channels = db.prepare(`
+        SELECT users.id, users.name, users.profile_image, users.verified
+        FROM follows
+        INNER JOIN users ON users.id = follows.followed_id
+        WHERE follows.follower_id = ?
+        ORDER BY follows.created_at DESC
+    `).all(req.user.id);
+
+    res.json(channels);
+});
+
+// KANAAL VOLGEN
+app.post("/follows/:userId", authenticate, (req, res) => {
+    if (req.user.role === "admin") {
+        return res.status(403).json({ error: "Gebruik een bezoekersaccount om kanalen te volgen." });
+    }
+
+    const userId = Number(req.params.userId);
+    if (!Number.isInteger(userId) || userId <= 0 || userId === Number(req.user.id)) {
+        return res.status(400).json({ error: "Ongeldig kanaal." });
+    }
+
+    const channel = db.prepare("SELECT id FROM users WHERE id = ?").get(userId);
+    if (!channel) return res.status(404).json({ error: "Kanaal niet gevonden." });
+
+    db.prepare(
+        "INSERT OR IGNORE INTO follows (follower_id, followed_id) VALUES (?, ?)"
+    ).run(req.user.id, userId);
+
+    res.json({ success: true });
+});
+
+// KANAAL NIET MEER VOLGEN
+app.delete("/follows/:userId", authenticate, (req, res) => {
+    if (req.user.role === "admin") {
+        return res.status(403).json({ error: "Gebruik een bezoekersaccount om kanalen te beheren." });
+    }
+
+    const userId = Number(req.params.userId);
+    db.prepare(
+        "DELETE FROM follows WHERE follower_id = ? AND followed_id = ?"
+    ).run(req.user.id, userId);
+
+    res.json({ success: true });
 });
 
 // KIJKGESCHIEDENIS
