@@ -75,6 +75,15 @@ db.exec(`
 `);
 
 
+// Meldingen voor het beheerdersaccount over nieuwe inzendingen.
+db.exec(`CREATE TABLE IF NOT EXISTS admin_notifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    message TEXT NOT NULL,
+    video_id INTEGER,
+    is_read INTEGER NOT NULL DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)`);
+
 // Bewaar profielgegevens van het aparte beheerdersaccount.
 db.exec(`CREATE TABLE IF NOT EXISTS admin_profile (
     id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -599,6 +608,10 @@ app.post("/videos", authenticate, upload.single("video"), (req, res) => {
             category === "Bijbelstudie" && !hasVideo ? studyContent.trim() : null
         );
 
+        const submitter = req.user.role === "admin" ? "Beheerder" : (getUser(req.user.id)?.name || "Een gebruiker");
+        db.prepare("INSERT INTO admin_notifications (message, video_id) VALUES (?, ?)")
+            .run(submitter + " heeft een nieuwe " + category + " ingestuurd: " + title.trim(), result.lastInsertRowid);
+
         res.status(201).json({
             message: "Je inzending wacht op goedkeuring.",
             videoId: result.lastInsertRowid
@@ -734,7 +747,14 @@ app.post("/videos/:id/view", authenticate, (req, res) => {
 
 // MELDINGEN
 app.get("/notifications", authenticate, (req, res) => {
-    if (req.user.role === "admin") return res.json([]);
+    if (req.user.role === "admin") {
+        return res.json(db.prepare(`
+            SELECT id, message, is_read, created_at, video_id
+            FROM admin_notifications
+            ORDER BY created_at DESC
+            LIMIT 100
+        `).all());
+    }
 
     const items = db.prepare(`
         SELECT id, message, is_read, created_at
@@ -749,7 +769,9 @@ app.get("/notifications", authenticate, (req, res) => {
 
 app.post("/notifications/:id/read", authenticate, (req, res) => {
     if (req.user.role === "admin") {
-        return res.status(404).json({ error: "Melding niet gevonden." });
+        const result = db.prepare("UPDATE admin_notifications SET is_read = 1 WHERE id = ?").run(req.params.id);
+        if (!result.changes) return res.status(404).json({ error: "Melding niet gevonden." });
+        return res.json({ success: true });
     }
 
     const result = db.prepare(`
