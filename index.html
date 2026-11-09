@@ -242,6 +242,12 @@ button{cursor:pointer}
             <div class="field"><label>Categorie</label><select id="uploadCategory"><option value="Preek">Preek</option><option value="Worship">Worship</option><option value="Bijbelstudie">Bijbelstudie</option></select></div>
             <div class="field full"><label>Beschrijving</label><textarea id="uploadDescription" rows="3"></textarea></div>
             <div class="field full"><label>Videobestand (maximaal 500 MB)</label><input id="uploadFile" type="file" accept="video/*"></div>
+            <div class="field full">
+              <label>Thumbnail / omslagafbeelding (optioneel)</label>
+              <input id="uploadThumbnail" type="file" accept="image/*" onchange="previewUploadThumbnail(event)">
+              <p class="page-description">Kies zelf een afbeelding. Laat je dit leeg, dan maakt FaithTube automatisch een afbeelding uit je video.</p>
+              <img id="uploadThumbnailPreview" class="hidden" alt="Voorbeeld thumbnail" style="width:220px;max-width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px;margin-top:10px">
+            </div>
             <div class="field full"><label>Of plak een videolink</label><input id="uploadUrl" type="url" placeholder="https://..."></div>
             <div class="field full hidden" id="bibleFields"><label>Bijbelgedeelte</label><input id="bibleReference" placeholder="Bijvoorbeeld Johannes 3:16"><label style="margin-top:12px">Inhoud Bijbelstudie</label><textarea id="studyContent" rows="5"></textarea></div>
             <div class="field full">
@@ -761,6 +767,56 @@ function getVideoDuration(file) {
 
 let videoUploadInProgress = false;
 
+function previewUploadThumbnail(event) {
+  const file = event.target.files && event.target.files[0];
+  const preview = document.getElementById("uploadThumbnailPreview");
+  if (!file) { preview.classList.add("hidden"); return; }
+  if (!file.type.startsWith("image/")) {
+    toast("Kies een geldige afbeelding.");
+    event.target.value = "";
+    preview.classList.add("hidden");
+    return;
+  }
+  preview.src = URL.createObjectURL(file);
+  preview.classList.remove("hidden");
+}
+
+function makeVideoThumbnail(file) {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement("video");
+    const objectUrl = URL.createObjectURL(file);
+    video.muted = true;
+    video.preload = "metadata";
+    video.onloadedmetadata = () => {
+      const target = Math.min(1, Math.max(0, (video.duration || 1) / 2));
+      video.currentTime = target;
+    };
+    video.onseeked = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = 640;
+        canvas.height = 360;
+        const context = canvas.getContext("2d");
+        const scale = Math.max(640 / video.videoWidth, 360 / video.videoHeight);
+        const width = video.videoWidth * scale;
+        const height = video.videoHeight * scale;
+        context.drawImage(video, (640 - width) / 2, (360 - height) / 2, width, height);
+        const data = canvas.toDataURL("image/jpeg", 0.78);
+        URL.revokeObjectURL(objectUrl);
+        resolve(data);
+      } catch (error) {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error("Automatische thumbnail maken is niet gelukt. Kies zelf een afbeelding."));
+      }
+    };
+    video.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Deze video kan niet worden gelezen om een thumbnail te maken. Kies zelf een afbeelding."));
+    };
+    video.src = objectUrl;
+  });
+}
+
 function sendVideoUpload(formData, onProgress) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -831,6 +887,23 @@ async function uploadVideo() {
   formData.append("bibleReference", bibleReference);
   formData.append("studyContent", studyContent);
   if (file) formData.append("video", file);
+  const thumbnailFile = document.getElementById("uploadThumbnail").files[0];
+  if (thumbnailFile) {
+    const thumbnailData = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = () => reject(new Error("Thumbnail kon niet worden gelezen."));
+      reader.readAsDataURL(thumbnailFile);
+    });
+    formData.append("thumbnailData", thumbnailData);
+  } else if (file) {
+    try {
+      formData.append("thumbnailData", await makeVideoThumbnail(file));
+    } catch (error) {
+      toast(error.message);
+      return;
+    }
+  }
   if (url) formData.append("videoUrl", url);
 
   videoUploadInProgress = true;
@@ -857,6 +930,8 @@ async function uploadVideo() {
     ["uploadTitle", "uploadDescription", "uploadUrl", "bibleReference", "studyContent"]
       .forEach(id => document.getElementById(id).value = "");
     document.getElementById("uploadFile").value = "";
+    document.getElementById("uploadThumbnail").value = "";
+    document.getElementById("uploadThumbnailPreview").classList.add("hidden");
   } catch (error) {
     progressText.textContent = "Upload niet gelukt.";
     toast(error.message);
