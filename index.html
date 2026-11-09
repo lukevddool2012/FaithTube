@@ -781,6 +781,38 @@ function previewUploadThumbnail(event) {
   preview.classList.remove("hidden");
 }
 
+async function validateThumbnailImage(file) {
+  if (file.size > 3 * 1024 * 1024) {
+    throw new Error("De thumbnail mag maximaal 3 MB zijn.");
+  }
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const image = await new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("De thumbnail-afbeelding kan niet worden geopend."));
+      img.src = objectUrl;
+    });
+    const canvas = document.createElement("canvas");
+    canvas.width = 120;
+    canvas.height = 68;
+    const context = canvas.getContext("2d");
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    let brightness = 0;
+    let count = 0;
+    for (let i = 0; i < pixels.length; i += 16) {
+      brightness += pixels[i] * 0.2126 + pixels[i + 1] * 0.7152 + pixels[i + 2] * 0.0722;
+      count++;
+    }
+    if (count && brightness / count < 18) {
+      throw new Error("Deze thumbnail is bijna helemaal zwart. Kies een afbeelding met duidelijk beeld.");
+    }
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
 function makeVideoThumbnail(file) {
   return new Promise((resolve, reject) => {
     const video = document.createElement("video");
@@ -792,7 +824,7 @@ function makeVideoThumbnail(file) {
 
     const finish = () => {
       URL.revokeObjectURL(objectUrl);
-      if (!bestFrame || bestBrightness < 12) {
+      if (!bestFrame || bestBrightness < 20) {
         reject(new Error("Er is geen duidelijk beeld in deze video gevonden. Kies zelf een thumbnail."));
         return;
       }
@@ -930,6 +962,12 @@ async function uploadVideo() {
   if (file) formData.append("video", file);
   const thumbnailFile = document.getElementById("uploadThumbnail").files[0];
   if (thumbnailFile) {
+    try {
+      await validateThumbnailImage(thumbnailFile);
+    } catch (error) {
+      toast(error.message);
+      return;
+    }
     const thumbnailData = await new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve(String(reader.result || ""));
