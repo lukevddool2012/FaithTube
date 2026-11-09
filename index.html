@@ -1269,8 +1269,10 @@ async function renderAdmin() {
           <p>Categorie: ${escapeHTML(video.category)}</p>
           <p>Ingestuurd door: ${escapeHTML(video.author_name || "Onbekend")}</p>
           ${video.video_url
-            ? `<a href="${escapeHTML(video.video_url)}" target="_blank" rel="noopener" style="color:var(--gold)">Video bekijken ↗</a>`
-            : ""}
+            ? `<video controls playsinline preload="metadata" style="display:block;width:100%;max-height:420px;margin-top:14px;border-radius:12px;background:#000"><source src="${API_BASE + escapeHTML(video.video_url)}" type="video/mp4">Je browser kan deze video niet afspelen.</video>`
+            : (video.category === "Bijbelstudie" && video.study_content
+                ? `<div class="panel"><strong>Inhoud Bijbelstudie</strong><p>${escapeHTML(video.study_content)}</p></div>`
+                : "<p>Er is geen videobestand bij deze inzending.</p>")}
           <div style="margin-top:15px">
             <button class="gold-btn" onclick="approveVideo(${Number(video.id)})">✓ Goedkeuren</button>
             <button class="danger-btn" onclick="rejectVideo(${Number(video.id)})">✕ Afwijzen</button>
