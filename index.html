@@ -253,7 +253,13 @@ button{cursor:pointer}
         <h1 class="page-heading">◉ Mijn profiel</h1><p class="page-description">Beheer je naam, profielfoto en biografie.</p>
         <div class="panel"><p id="adminProfileNotice" class="page-description hidden">Je bent ingelogd als beheerder. De beheerder gebruikt een apart account en kan deze profielgegevens hier niet aanpassen.</p><div class="form-grid">
           <div class="field"><label>Naam</label><input id="profileName"></div>
-          <div class="field"><label>Link naar profielfoto</label><input id="profileImage" type="url" placeholder="https://..."></div>
+          <div class="field full">
+            <label>Profielfoto kiezen vanaf je apparaat</label>
+            <input id="profileImageFile" type="file" accept="image/*" onchange="handleProfileImageFile(event)">
+            <p class="page-description">Kies een foto uit je fotobibliotheek of bestanden. Maximaal 350 KB.</p>
+            <img id="profileImagePreview" alt="Voorbeeld profielfoto" class="hidden" style="width:104px;height:104px;object-fit:cover;border-radius:50%;margin-top:12px">
+          </div>
+          <div class="field full"><label>Of gebruik een link naar een profielfoto</label><input id="profileImage" type="url" placeholder="https://..."></div>
           <div class="field full"><label>Biografie</label><textarea id="profileBio" rows="4"></textarea></div>
           <div class="field full" id="saveProfileRow"><button class="gold-btn" onclick="saveProfile()">Profiel opslaan</button></div>
         </div></div>
@@ -750,26 +756,72 @@ async function uploadVideo() {
 
 /* PROFIEL */
 
+let selectedProfileImage = "";
+
+function handleProfileImageFile(event) {
+  const file = event.target.files && event.target.files[0];
+  const preview = document.getElementById("profileImagePreview");
+
+  if (!file) return;
+
+  if (!file.type.startsWith("image/")) {
+    toast("Kies een geldig afbeeldingsbestand.");
+    event.target.value = "";
+    return;
+  }
+
+  if (file.size > 350 * 1024) {
+    toast("Deze foto is te groot. Kies een afbeelding van maximaal 350 KB.");
+    event.target.value = "";
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    selectedProfileImage = String(reader.result || "");
+    preview.src = selectedProfileImage;
+    preview.classList.remove("hidden");
+    document.getElementById("profileImage").value = "";
+    toast("Foto gekozen. Klik op Profiel opslaan.");
+  };
+  reader.onerror = () => toast("De foto kon niet worden gelezen.");
+  reader.readAsDataURL(file);
+}
+
 async function loadProfile() {
   const nameField = document.getElementById("profileName");
   const imageField = document.getElementById("profileImage");
   const bioField = document.getElementById("profileBio");
+  const fileField = document.getElementById("profileImageFile");
+  const preview = document.getElementById("profileImagePreview");
   const adminNotice = document.getElementById("adminProfileNotice");
   const saveRow = document.getElementById("saveProfileRow");
 
   nameField.disabled = false;
   imageField.disabled = false;
   bioField.disabled = false;
+  fileField.disabled = false;
   adminNotice.classList.add("hidden");
   saveRow.classList.remove("hidden");
+  selectedProfileImage = "";
+  fileField.value = "";
 
   try {
     const profileResponse = await api("/profile/" + encodeURIComponent(currentUser.id));
     const profile = profileResponse.user || profileResponse;
 
     nameField.value = profile.name || currentUser.name || "";
-    imageField.value = profile.profile_image || currentUser.profile_image || "";
+    const savedImage = profile.profile_image || currentUser.profile_image || "";
+    imageField.value = savedImage.startsWith("data:image/") ? "" : savedImage;
     bioField.value = profile.bio || currentUser.bio || "";
+
+    if (savedImage) {
+      preview.src = savedImage;
+      preview.classList.remove("hidden");
+    } else {
+      preview.removeAttribute("src");
+      preview.classList.add("hidden");
+    }
   } catch (error) {
     console.error("FaithTube profiel laden mislukt:", error);
     toast("Profiel laden mislukt: " + error.message);
@@ -778,7 +830,8 @@ async function loadProfile() {
 
 async function saveProfile() {
   const name = document.getElementById("profileName").value.trim();
-  const profileImage = document.getElementById("profileImage").value.trim();
+  const imageLink = document.getElementById("profileImage").value.trim();
+  const profileImage = selectedProfileImage || imageLink;
   const bio = document.getElementById("profileBio").value.trim();
 
   if (!name) {
@@ -794,6 +847,7 @@ async function saveProfile() {
 
     const updatedUser = updateResponse.user || updateResponse;
     currentUser = { ...currentUser, ...updatedUser };
+    selectedProfileImage = "";
     updateProfileButton();
     toast("Je profiel is opgeslagen!");
   } catch (error) {
