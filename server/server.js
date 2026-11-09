@@ -592,7 +592,7 @@ app.post("/videos", authenticate, upload.single("video"), (req, res) => {
 
         let thumbnailUrl = "";
         if (typeof req.body.thumbnailData === "string" && req.body.thumbnailData) {
-            const match = req.body.thumbnailData.match(/^data:image\\/(jpeg|png|webp);base64,([A-Za-z0-9+/=]+)$/);
+            const match = req.body.thumbnailData.match(/^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+/=]+)$/);
             if (!match) {
                 if (req.file) fs.unlinkSync(req.file.path);
                 return res.status(400).json({ error: "De thumbnail moet een JPG-, PNG- of WebP-afbeelding zijn." });
