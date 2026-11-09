@@ -188,7 +188,7 @@ button{cursor:pointer}
       <button class="nav-item" onclick="showPage('history',this)"><span class="nav-icon">◷</span><span>Kijkgeschiedenis</span></button>
       <button class="nav-item" onclick="showPage('follows',this)"><span class="nav-icon">♧</span><span>Kanalen volgen</span></button>
       <button class="nav-item" onclick="showPage('playlists',this)"><span class="nav-icon">☷</span><span>Afspeellijsten</span></button>
-      <button class="nav-item" onclick="showPage('notifications',this)"><span class="nav-icon">♢</span><span>Meldingen</span></button>
+      <button class="nav-item" onclick="showPage('notifications',this)"><span class="nav-icon">♢</span><span>Meldingen</span><span id="notificationBadge" class="hidden" style="margin-left:auto;min-width:22px;height:22px;padding:0 6px;border-radius:99px;background:#c99b3b;color:#111;font-size:12px;font-weight:800;display:inline-flex;align-items:center;justify-content:center">0</span></button>
 
       <div class="nav-label">ACCOUNT</div>
       <button class="nav-item" onclick="showPage('upload',this)"><span class="nav-icon">＋</span><span>Video uploaden</span></button>
@@ -1219,35 +1219,48 @@ async function loadNotifications() {
     notifications = await api("/notifications");
     const element = document.getElementById("notificationList");
     const isAdmin = currentUser && currentUser.role === "admin";
-    const pendingVideos = isAdmin ? await api("/admin/videos") : [];
-    const pendingById = new Map(pendingVideos.map(video => [Number(video.id), video]));
+    const badge = document.getElementById("notificationBadge");
+    const unreadCount = notifications.filter(item => !item.is_read).length;
 
-    if (!notifications.length) {
-      element.innerHTML = `<div class="empty-state">Je hebt nog geen meldingen.</div>`;
-      return;
+    if (badge) {
+      badge.textContent = unreadCount;
+      badge.classList.toggle("hidden", unreadCount === 0);
     }
 
-    element.innerHTML = notifications.map(item => {
-      const video = item.video_id ? pendingById.get(Number(item.video_id)) : null;
-      return `
-        <div class="panel" style="${item.is_read ? "opacity:.8" : "border-color:var(--gold)"}">
-          <p>${escapeHTML(item.message || item.text || "Nieuwe melding")}</p>
-          ${video ? `
-            <h3 style="margin-top:12px">${escapeHTML(video.title)}</h3>
-            <p>${escapeHTML(video.description || "")}</p>
-            <p class="page-description">Categorie: ${escapeHTML(video.category)} · Ingestuurd door: ${escapeHTML(video.author_name || "Onbekend")}</p>
-            ${video.video_url ? `<video controls playsinline preload="metadata" style="display:block;width:100%;max-height:360px;margin:12px 0;border-radius:12px;background:#000"><source src="${API_BASE + escapeHTML(video.video_url)}">Je browser kan deze video niet afspelen.</video>` : (video.study_content ? `<div class="panel"><strong>Inhoud Bijbelstudie</strong><p>${escapeHTML(video.study_content)}</p></div>` : "")}
-            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
-              <button class="gold-btn" onclick="approveVideo(${Number(video.id)})">✓ Goedkeuren</button>
-              <button class="danger-btn" onclick="rejectVideo(${Number(video.id)})">✕ Afwijzen</button>
+    // Haal de echte wachtrij apart op. Zo blijven de actieknoppen zichtbaar,
+    // ook als een oude melding geen video_id bevat.
+    const pendingVideos = isAdmin ? await api("/admin/videos") : [];
+    let pendingHtml = "";
+
+    if (isAdmin) {
+      pendingHtml = `
+        <div class="panel" style="border:1px solid var(--gold);margin-bottom:18px">
+          <h2>Video's die jouw beoordeling nodig hebben (${pendingVideos.length})</h2>
+          ${pendingVideos.length ? pendingVideos.map(video => `
+            <div class="panel" style="margin-top:14px">
+              <h3>${escapeHTML(video.title)}</h3>
+              <p>${escapeHTML(video.description || "")}</p>
+              <p class="page-description">Categorie: ${escapeHTML(video.category)} · Ingestuurd door: ${escapeHTML(video.author_name || "Onbekend")}</p>
+              ${video.video_url ? `<video controls playsinline preload="metadata" style="display:block;width:100%;max-height:380px;margin:12px 0;border-radius:12px;background:#000"><source src="${API_BASE + escapeHTML(video.video_url)}">Je browser kan deze video niet afspelen.</video>` : (video.study_content ? `<div class="panel"><strong>Inhoud Bijbelstudie</strong><p>${escapeHTML(video.study_content)}</p></div>` : "<p>Geen videobestand bij deze inzending.</p>")}
+              <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
+                <button type="button" class="gold-btn" onclick="approveVideo(${Number(video.id)})">✓ Goedkeuren</button>
+                <button type="button" class="danger-btn" onclick="rejectVideo(${Number(video.id)})">✕ Afwijzen</button>
+              </div>
             </div>
-          ` : (item.video_id && isAdmin ? `<p class="page-description">Deze video is al beoordeeld of verwijderd.</p>` : "")}
-          ${item.is_read ? "<span class='page-description'>Gelezen</span>" : `<button class="action-btn" style="margin-top:12px" onclick="readNotification(${Number(item.id)})">Als gelezen markeren</button>`}
-        </div>
-      `;
-    }).join("");
+          `).join("") : '<p class="page-description">Er staan geen video\'s meer klaar om te beoordelen.</p>'}
+        </div>`;
+    }
+
+    const notificationHtml = notifications.length ? notifications.map(item => `
+      <div class="panel" style="${item.is_read ? "opacity:.8" : "border-color:var(--gold)"}">
+        <p>${escapeHTML(item.message || item.text || "Nieuwe melding")}</p>
+        ${item.is_read ? "<span class='page-description'>Gelezen</span>" : `<button type="button" class="action-btn" style="margin-top:12px" onclick="readNotification(${Number(item.id)})">Als gelezen markeren</button>`}
+      </div>
+    `).join("") : '<div class="empty-state">Je hebt nog geen meldingen.</div>';
+
+    element.innerHTML = pendingHtml + '<h2 style="margin:18px 0 12px">Meldingen</h2>' + notificationHtml;
   } catch (error) {
-    toast(error.message);
+    toast("Meldingen konden niet worden geladen: " + error.message);
   }
 }
 
@@ -1308,7 +1321,7 @@ async function approveVideo(id) {
     await api("/admin/videos/" + id + "/approve", { method: "POST" });
     toast("Video goedgekeurd!");
     await loadVideos();
-    renderAdmin();
+    await renderAdmin();
     if (currentUser && currentUser.role === "admin") await loadNotifications();
   } catch (error) {
     toast(error.message);
