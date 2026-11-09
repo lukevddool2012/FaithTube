@@ -785,30 +785,71 @@ function makeVideoThumbnail(file) {
   return new Promise((resolve, reject) => {
     const video = document.createElement("video");
     const objectUrl = URL.createObjectURL(file);
-    video.muted = true;
-    video.preload = "metadata";
-    video.onloadedmetadata = () => {
-      const target = Math.min(1, Math.max(0, (video.duration || 1) / 2));
-      video.currentTime = target;
+    const candidates = [];
+    let bestFrame = null;
+    let bestBrightness = -1;
+    let index = 0;
+
+    const finish = () => {
+      URL.revokeObjectURL(objectUrl);
+      if (!bestFrame || bestBrightness < 12) {
+        reject(new Error("Er is geen duidelijk beeld in deze video gevonden. Kies zelf een thumbnail."));
+        return;
+      }
+      resolve(bestFrame);
     };
+
+    video.muted = true;
+    video.preload = "auto";
+    video.onloadedmetadata = () => {
+      const duration = Number.isFinite(video.duration) ? video.duration : 0;
+      if (!duration || !video.videoWidth || !video.videoHeight) {
+        finish();
+        return;
+      }
+      // Neem beelden op meerdere momenten; sla zwarte overgangen en intro's over.
+      [0.08, 0.2, 0.35, 0.5, 0.65, 0.8, 0.92].forEach(part => {
+        candidates.push(Math.max(0, Math.min(duration - 0.1, duration * part)));
+      });
+      video.currentTime = candidates[index];
+    };
+
     video.onseeked = () => {
       try {
         const canvas = document.createElement("canvas");
-        canvas.width = 640;
-        canvas.height = 360;
-        const context = canvas.getContext("2d");
-        const scale = Math.max(640 / video.videoWidth, 360 / video.videoHeight);
-        const width = video.videoWidth * scale;
-        const height = video.videoHeight * scale;
-        context.drawImage(video, (640 - width) / 2, (360 - height) / 2, width, height);
-        const data = canvas.toDataURL("image/jpeg", 0.78);
-        URL.revokeObjectURL(objectUrl);
-        resolve(data);
+        canvas.width = 160;
+        canvas.height = 90;
+        const context = canvas.getContext("2d", { willReadFrequently: true });
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+        let total = 0;
+        let count = 0;
+        for (let i = 0; i < pixels.length; i += 16) {
+          total += (pixels[i] * 0.2126 + pixels[i + 1] * 0.7152 + pixels[i + 2] * 0.0722);
+          count++;
+        }
+        const brightness = count ? total / count : 0;
+        if (brightness > bestBrightness) {
+          bestBrightness = brightness;
+          const output = document.createElement("canvas");
+          output.width = 640;
+          output.height = 360;
+          const out = output.getContext("2d");
+          const scale = Math.max(640 / video.videoWidth, 360 / video.videoHeight);
+          const width = video.videoWidth * scale;
+          const height = video.videoHeight * scale;
+          out.drawImage(video, (640 - width) / 2, (360 - height) / 2, width, height);
+          bestFrame = output.toDataURL("image/jpeg", 0.82);
+        }
+        index++;
+        if (index < candidates.length) video.currentTime = candidates[index];
+        else finish();
       } catch (error) {
         URL.revokeObjectURL(objectUrl);
         reject(new Error("Automatische thumbnail maken is niet gelukt. Kies zelf een afbeelding."));
       }
     };
+
     video.onerror = () => {
       URL.revokeObjectURL(objectUrl);
       reject(new Error("Deze video kan niet worden gelezen om een thumbnail te maken. Kies zelf een afbeelding."));
@@ -1037,7 +1078,23 @@ async function saveProfile() {
     currentUser = { ...currentUser, ...updatedUser };
     selectedProfileImage = "";
     updateProfileButton();
-    toast("Je profiel is opgeslagen!");
+    // Lees het profiel direct terug vanaf de server, zodat we bevestigen wat echt is opgeslagen.
+    const savedResponse = await api("/profile/" + encodeURIComponent(currentUser.id));
+    const savedProfile = savedResponse.user || savedResponse;
+    currentUser = { ...currentUser, ...savedProfile };
+    document.getElementById("profileName").value = savedProfile.name || "";
+    document.getElementById("profileBio").value = savedProfile.bio || "";
+    const savedImage = savedProfile.profile_image || "";
+    document.getElementById("profileImage").value = savedImage.startsWith("data:image/") ? "" : savedImage;
+    const preview = document.getElementById("profileImagePreview");
+    if (savedImage) {
+      preview.src = savedImage;
+      preview.classList.remove("hidden");
+    } else {
+      preview.removeAttribute("src");
+      preview.classList.add("hidden");
+    }
+    toast("Je profiel is opgeslagen en opnieuw gecontroleerd!");
   } catch (error) {
     toast(error.message);
   }
