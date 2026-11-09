@@ -968,22 +968,48 @@ async function loadHistory() {
 /* KANALEN VOLGEN */
 
 async function loadFollows() {
-  try {
-    following = await api("/follows");
-    const element = document.getElementById("followList");
+  const element = document.getElementById("followList");
+  element.innerHTML = `<div class="empty-state">Kanalen laden...</div>`;
 
-    if (!following.length) {
-      element.innerHTML = `<div class="empty-state">Je volgt nog geen kanalen.</div>`;
+  try {
+    const results = await Promise.all([
+      api("/channels"),
+      api("/follows")
+    ]);
+
+    const channels = Array.isArray(results[0]) ? results[0] : [];
+    following = Array.isArray(results[1]) ? results[1] : [];
+    const followedIds = new Set(following.map(user => Number(user.id || user.user_id)));
+
+    if (!channels.length) {
+      element.innerHTML = `<div class="empty-state">Er zijn nog geen kanalen met goedgekeurde video's.</div>`;
       return;
     }
 
-    element.innerHTML = following.map(user => `
-      <div class="panel">
-        <strong>${escapeHTML(user.name)}</strong>
-        <button class="action-btn" onclick="unfollowUser(${Number(user.id || user.user_id)})">Niet meer volgen</button>
-      </div>
-    `).join("");
+    element.innerHTML = channels.map(channel => {
+      const isFollowing = followedIds.has(Number(channel.id));
+      const image = channel.profile_image
+        ? `<img src="${escapeHTML(channel.profile_image)}" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:50%">`
+        : `<div style="width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:var(--panel);font-weight:700">${escapeHTML((channel.name || "FT").slice(0,2).toUpperCase())}</div>`;
+
+      return `
+        <div class="panel" style="display:flex;align-items:center;gap:14px;margin-bottom:12px">
+          ${image}
+          <div style="flex:1;min-width:0">
+            <strong>${escapeHTML(channel.name)}</strong>
+            <p class="page-description">${Number(channel.video_count || 0)} video's ${channel.verified ? " · Geverifieerd" : ""}</p>
+            ${channel.bio ? `<p>${escapeHTML(channel.bio)}</p>` : ""}
+          </div>
+          ${Number(channel.id) === Number(currentUser.id)
+            ? `<span class="page-description">Jouw kanaal</span>`
+            : isFollowing
+              ? `<button class="action-btn" onclick="unfollowUser(${Number(channel.id)})">Volgend</button>`
+              : `<button class="gold-btn" onclick="followUser(${Number(channel.id)})">Volgen</button>`}
+        </div>
+      `;
+    }).join("");
   } catch (error) {
+    element.innerHTML = `<div class="empty-state">Kanalen konden niet worden geladen.</div>`;
     toast(error.message);
   }
 }
