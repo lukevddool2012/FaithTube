@@ -262,6 +262,7 @@ button{cursor:pointer}
           <div class="field full"><label>Of gebruik een link naar een profielfoto</label><input id="profileImage" type="url" placeholder="https://..."></div>
           <div class="field full"><label>Biografie</label><textarea id="profileBio" rows="4"></textarea></div>
           <div class="field full" id="saveProfileRow"><button class="gold-btn" onclick="saveProfile()">Profiel opslaan</button></div>
+          <div class="field full" id="deleteAccountRow"><hr style="border-color:rgba(255,255,255,.12);margin:12px 0"><h3 style="color:#e57373;margin-bottom:8px">Account verwijderen</h3><p class="page-description">Je account, profiel, reacties, kijkgeschiedenis en video's die je hebt geplaatst worden definitief verwijderd. Dit kan niet ongedaan worden gemaakt.</p><button type="button" class="gold-btn" style="background:#b83232;color:white" onclick="deleteMyAccount()">Mijn account definitief verwijderen</button></div>
         </div></div>
       </section>
 
@@ -279,7 +280,7 @@ button{cursor:pointer}
 <script>
 const API_BASE = "https://fathtube-server.onrender.com";
 
-let token = sessionStorage.getItem("faithtube_token") || "";
+let token = localStorage.getItem("faithtube_token") || "";
 let currentUser = null;
 let approvedVideos = [];
 let favorites = [];
@@ -373,7 +374,7 @@ async function login() {
     });
 
     token = data.token;
-    sessionStorage.setItem("faithtube_token", token);
+    localStorage.setItem("faithtube_token", token);
     await startApp();
   } catch (error) {
     errorElement.textContent = error.message;
@@ -401,10 +402,31 @@ async function register() {
     });
 
     token = data.token;
-    sessionStorage.setItem("faithtube_token", token);
+    localStorage.setItem("faithtube_token", token);
     await startApp();
   } catch (error) {
     document.getElementById("authError").textContent = error.message;
+  }
+}
+
+async function deleteMyAccount() {
+  if (!currentUser || currentUser.role === "admin") {
+    toast("Het beheerdersaccount kan niet via deze knop worden verwijderd.");
+    return;
+  }
+  const confirmed = window.confirm("Weet je zeker dat je jouw FaithTube-account definitief wilt verwijderen? Je profiel, reacties, kijkgeschiedenis en geplaatste video's worden ook verwijderd. Dit kan niet ongedaan worden gemaakt.");
+  if (!confirmed) return;
+  const secondConfirm = window.prompt('Typ VERWIJDER om je account definitief te verwijderen.');
+  if (secondConfirm !== "VERWIJDER") {
+    toast("Verwijderen geannuleerd.");
+    return;
+  }
+  try {
+    await api("/account", { method: "DELETE" });
+    logout();
+    document.getElementById("authError").textContent = "Je account is definitief verwijderd.";
+  } catch (error) {
+    toast(error.message || "Account verwijderen is mislukt.");
   }
 }
 
@@ -441,7 +463,7 @@ async function startApp() {
 function logout() {
   token = "";
   currentUser = null;
-  sessionStorage.removeItem("faithtube_token");
+  localStorage.removeItem("faithtube_token");
 
   document.getElementById("appScreen").classList.add("hidden");
   document.getElementById("authScreen").classList.remove("hidden");
