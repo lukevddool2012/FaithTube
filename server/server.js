@@ -537,6 +537,19 @@ app.post("/videos", authenticate, upload.single("video"), (req, res) => {
         } = req.body;
 
         const hasVideo = Boolean(req.file);
+        const videoLink = typeof req.body.videoUrl === "string" ? req.body.videoUrl.trim() : "";
+        let validVideoLink = "";
+        if (videoLink) {
+            try {
+                const parsedLink = new URL(videoLink);
+                if (!["http:", "https:"].includes(parsedLink.protocol)) throw new Error("Ongeldig protocol");
+                validVideoLink = parsedLink.href;
+            } catch {
+                if (req.file) fs.unlinkSync(req.file.path);
+                return res.status(400).json({ error: "Vul een geldige videolink in die begint met https:// of http://." });
+            }
+        }
+        const hasVideoSource = hasVideo || Boolean(validVideoLink);
         const allowed = ["Preek", "Worship", "Bijbelstudie"];
 
         if (
@@ -557,14 +570,14 @@ app.post("/videos", authenticate, upload.single("video"), (req, res) => {
                 return res.status(400).json({ error: "Vul de Bijbeltekst in." });
             }
 
-            if (hasVideo && (typeof description !== "string" || !description.trim())) {
+            if (hasVideoSource && (typeof description !== "string" || !description.trim())) {
                 fs.unlinkSync(req.file.path);
                 return res.status(400).json({
                     error: "Voeg een beschrijving toe bij je video."
                 });
             }
 
-            if (!hasVideo && (
+            if (!hasVideoSource && (
                 typeof studyContent !== "string" ||
                 studyContent.trim().length < 30
             )) {
@@ -573,8 +586,8 @@ app.post("/videos", authenticate, upload.single("video"), (req, res) => {
                 });
             }
         } else {
-            if (!hasVideo) {
-                return res.status(400).json({ error: "Kies een videobestand." });
+            if (!hasVideoSource) {
+                return res.status(400).json({ error: "Kies een videobestand of plak een geldige videolink." });
             }
 
             if (typeof description !== "string" || !description.trim()) {
@@ -608,7 +621,7 @@ app.post("/videos", authenticate, upload.single("video"), (req, res) => {
             thumbnailUrl = `/uploads/${thumbnailFilename}`;
         }
 
-        const videoUrl = hasVideo ? `/uploads/${req.file.filename}` : "";
+        const videoUrl = hasVideo ? `/uploads/${req.file.filename}` : validVideoLink;
 
         const result = db.prepare(`
             INSERT INTO videos
@@ -625,7 +638,7 @@ app.post("/videos", authenticate, upload.single("video"), (req, res) => {
             thumbnailUrl,
             req.user.role === "admin" ? null : req.user.id,
             category === "Bijbelstudie" ? bibleReference.trim() : null,
-            category === "Bijbelstudie" && !hasVideo ? studyContent.trim() : null
+            category === "Bijbelstudie" && !hasVideoSource ? studyContent.trim() : null
         );
 
         const submitter = req.user.role === "admin" ? "Beheerder" : (getUser(req.user.id)?.name || "Een gebruiker");
@@ -852,11 +865,12 @@ app.delete("/admin/videos/:id", authenticate, adminOnly, (req, res) => {
     ).get(req.params.id);
 
     if (video) {
-        const filename = path.basename(video.video_url);
-        const filePath = path.join(uploadDir, filename);
-
-        if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
+        for (const mediaUrl of [video.video_url, video.thumbnail_url]) {
+            if (typeof mediaUrl === "string" && mediaUrl.startsWith("/uploads/")) {
+                const filename = path.basename(mediaUrl);
+                const filePath = path.join(uploadDir, filename);
+                if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+            }
         }
     }
 
