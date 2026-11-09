@@ -244,7 +244,15 @@ button{cursor:pointer}
             <div class="field full"><label>Videobestand (maximaal 3 uur, maximaal 500 MB)</label><input id="uploadFile" type="file" accept="video/*"></div>
             <div class="field full"><label>Of plak een videolink</label><input id="uploadUrl" type="url" placeholder="https://..."></div>
             <div class="field full hidden" id="bibleFields"><label>Bijbelgedeelte</label><input id="bibleReference" placeholder="Bijvoorbeeld Johannes 3:16"><label style="margin-top:12px">Inhoud Bijbelstudie</label><textarea id="studyContent" rows="5"></textarea></div>
-            <div class="field full"><button class="gold-btn" onclick="uploadVideo()">Video insturen</button></div>
+            <div class="field full">
+              <button id="uploadVideoButton" class="gold-btn" type="button" onclick="uploadVideo()">Video insturen</button>
+              <div id="uploadProgressWrap" class="hidden" style="margin-top:14px">
+                <p id="uploadProgressText" class="page-description">Upload voorbereiden...</p>
+                <div style="height:10px;background:rgba(255,255,255,.14);border-radius:99px;overflow:hidden">
+                  <div id="uploadProgressBar" style="height:100%;width:0%;background:#d5ad55;transition:width .2s"></div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -744,7 +752,35 @@ function getVideoDuration(file) {
   });
 }
 
+let videoUploadInProgress = false;
+
+function sendVideoUpload(formData, onProgress) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", API_BASE + "/videos");
+    if (token) xhr.setRequestHeader("Authorization", "Bearer " + token);
+
+    xhr.upload.addEventListener("progress", event => {
+      if (event.lengthComputable) {
+        onProgress(Math.round((event.loaded / event.total) * 100));
+      }
+    });
+
+    xhr.addEventListener("load", () => {
+      let data = {};
+      try { data = JSON.parse(xhr.responseText || "{}"); } catch {}
+      if (xhr.status >= 200 && xhr.status < 300) resolve(data);
+      else reject(new Error(data.error || "Uploaden is mislukt (HTTP " + xhr.status + ")."));
+    });
+    xhr.addEventListener("error", () => reject(new Error("De verbinding is verbroken. Controleer je internet en probeer opnieuw.")));
+    xhr.addEventListener("abort", () => reject(new Error("De upload is afgebroken.")));
+    xhr.send(formData);
+  });
+}
+
 async function uploadVideo() {
+  if (videoUploadInProgress) return;
+
   const title = document.getElementById("uploadTitle").value.trim();
   const category = document.getElementById("uploadCategory").value;
   const description = document.getElementById("uploadDescription").value.trim();
@@ -752,6 +788,10 @@ async function uploadVideo() {
   const url = document.getElementById("uploadUrl").value.trim();
   const bibleReference = document.getElementById("bibleReference").value.trim();
   const studyContent = document.getElementById("studyContent").value.trim();
+  const button = document.getElementById("uploadVideoButton");
+  const progressWrap = document.getElementById("uploadProgressWrap");
+  const progressBar = document.getElementById("uploadProgressBar");
+  const progressText = document.getElementById("uploadProgressText");
 
   if (!title) {
     toast("Vul een titel in.");
@@ -791,24 +831,40 @@ async function uploadVideo() {
   formData.append("description", description);
   formData.append("bibleReference", bibleReference);
   formData.append("studyContent", studyContent);
-
   if (file) formData.append("video", file);
   if (url) formData.append("videoUrl", url);
 
-  try {
-    await api("/videos", {
-      method: "POST",
-      body: formData
-    });
+  videoUploadInProgress = true;
+  button.disabled = true;
+  button.textContent = "Bezig met insturen...";
+  progressWrap.classList.remove("hidden");
+  progressBar.style.width = "0%";
+  progressText.textContent = file ? "Video uploaden: 0%" : "Inzending versturen...";
 
-    toast("Je video is ingestuurd en wacht op goedkeuring.");
+  try {
+    if (file) {
+      await sendVideoUpload(formData, percent => {
+        progressBar.style.width = percent + "%";
+        progressText.textContent = "Video uploaden: " + percent + "%";
+      });
+    } else {
+      await api("/videos", { method: "POST", body: formData });
+      progressBar.style.width = "100%";
+    }
+
+    progressText.textContent = "Upload voltooid! Je video wacht op goedkeuring.";
+    toast("Je video is geüpload en wacht op goedkeuring.");
 
     ["uploadTitle", "uploadDescription", "uploadUrl", "bibleReference", "studyContent"]
       .forEach(id => document.getElementById(id).value = "");
-
     document.getElementById("uploadFile").value = "";
   } catch (error) {
+    progressText.textContent = "Upload niet gelukt.";
     toast(error.message);
+  } finally {
+    videoUploadInProgress = false;
+    button.disabled = false;
+    button.textContent = "Video insturen";
   }
 }
 
