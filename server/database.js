@@ -1,8 +1,12 @@
 
 const Database = require("better-sqlite3");
 const path = require("path");
+const fs = require("fs");
 
-const db = new Database(path.join(__dirname, "faithtube.db"));
+// DATABASE_PATH moet verwijzen naar permanente opslag op de hostingserver.
+const databasePath = process.env.DATABASE_PATH || path.join(__dirname, "faithtube.db");
+fs.mkdirSync(path.dirname(databasePath), { recursive: true });
+const db = new Database(databasePath);
 
 db.pragma("journal_mode = WAL");
 db.pragma("foreign_keys = ON");
