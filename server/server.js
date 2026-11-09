@@ -83,24 +83,37 @@ db.exec(`CREATE TABLE IF NOT EXISTS admin_profile (
     bio TEXT DEFAULT ""
 )`);
 
-// Eenmalige opschoning op verzoek: verwijder alle bezoekers, video's en bijbehorende gegevens.
-// Het aparte beheerdersaccount en het opgeslagen admin-profiel blijven behouden.
-const clearOldContent = db.transaction(() => {
-    db.exec(`
-        DELETE FROM comments;
-        DELETE FROM watch_history;
-        DELETE FROM notifications;
-        DELETE FROM follows;
-        DELETE FROM videos;
-        DELETE FROM users;
-    `);
-});
-clearOldContent();
-for (const file of fs.readdirSync(uploadDir)) {
-    const filePath = path.join(uploadDir, file);
-    if (fs.statSync(filePath).isFile()) fs.unlinkSync(filePath);
+// Eenmalige opschoning op verzoek. De marker voorkomt dat accounts bij elke herstart verdwijnen.
+db.exec(`CREATE TABLE IF NOT EXISTS app_settings (
+    setting_key TEXT PRIMARY KEY,
+    setting_value TEXT NOT NULL
+)`);
+const alreadyCleaned = db.prepare(
+    "SELECT setting_value FROM app_settings WHERE setting_key = ?"
+).get("initial_content_cleanup_v1");
+
+if (!alreadyCleaned) {
+    const clearOldContent = db.transaction(() => {
+        db.exec(`
+            DELETE FROM comments;
+            DELETE FROM watch_history;
+            DELETE FROM notifications;
+            DELETE FROM follows;
+            DELETE FROM videos;
+            DELETE FROM users;
+        `);
+        db.prepare(
+            "INSERT INTO app_settings (setting_key, setting_value) VALUES (?, ?)"
+        ).run("initial_content_cleanup_v1", "done");
+    });
+    clearOldContent();
+
+    for (const file of fs.readdirSync(uploadDir)) {
+        const filePath = path.join(uploadDir, file);
+        if (fs.statSync(filePath).isFile()) fs.unlinkSync(filePath);
+    }
+    console.log("Eenmalige opschoning uitgevoerd; admin-profiel is behouden.");
 }
-console.log("Oude accounts en video's zijn opgeschoond; admin-profiel is behouden.");
 
 // Video uploads
 const storage = multer.diskStorage({
