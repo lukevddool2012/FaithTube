@@ -140,7 +140,7 @@ button{cursor:pointer}
       <h2 style="margin-bottom:18px">Welkom terug</h2>
       <div class="field"><label>E-mailadres</label><input id="loginEmail" type="email" placeholder="jouw@email.nl"></div>
       <div class="field"><label>Wachtwoord</label><input id="loginPassword" type="password" placeholder="Je wachtwoord"></div>
-      <button class="primary-btn" onclick="login()">Inloggen</button>
+      <button id="loginButton" class="primary-btn" onclick="login()">Inloggen</button>
       <p class="auth-switch">Nog geen account? <button onclick="showRegister()">Account maken</button></p>
     </div>
 
@@ -340,9 +340,25 @@ function showRegister() {
   document.getElementById("authError").textContent = "";
 }
 
+let loginInProgress = false;
+
 async function login() {
+  if (loginInProgress) return;
+
   const email = document.getElementById("loginEmail").value.trim();
   const password = document.getElementById("loginPassword").value;
+  const button = document.getElementById("loginButton");
+  const errorElement = document.getElementById("authError");
+
+  if (!email || !password) {
+    errorElement.textContent = "Vul je e-mailadres en wachtwoord in.";
+    return;
+  }
+
+  loginInProgress = true;
+  button.disabled = true;
+  button.textContent = "Even wachten...";
+  errorElement.textContent = "";
 
   try {
     const data = await api("/login", {
@@ -354,7 +370,11 @@ async function login() {
     sessionStorage.setItem("faithtube_token", token);
     await startApp();
   } catch (error) {
-    document.getElementById("authError").textContent = error.message;
+    errorElement.textContent = error.message;
+  } finally {
+    loginInProgress = false;
+    button.disabled = false;
+    button.textContent = "Inloggen";
   }
 }
 
@@ -402,10 +422,10 @@ async function startApp() {
     updateProfileButton();
     setupUploadFields();
 
-    await loadVideos();
-    await loadPersonalData();
-
+    // Toon de startpagina direct; laad video's en persoonlijke gegevens daarna.
     showPage("home");
+    loadVideos();
+    loadPersonalData();
   } catch (error) {
     logout();
     toast("Log opnieuw in om verder te gaan.");
