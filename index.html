@@ -384,7 +384,12 @@ async function register() {
 
 async function startApp() {
   try {
-    currentUser = await api("/me");
+    const meResponse = await api("/me");
+    currentUser = meResponse.user || meResponse;
+
+    if (!currentUser || !currentUser.id) {
+      throw new Error("Je accountgegevens konden niet worden opgehaald.");
+    }
 
     document.getElementById("authScreen").classList.add("hidden");
     document.getElementById("appScreen").classList.remove("hidden");
@@ -727,12 +732,15 @@ async function uploadVideo() {
 
 async function loadProfile() {
   try {
-    const profile = await api("/profile/" + currentUser.id);
-    document.getElementById("profileName").value = profile.name || "";
+    const profileResponse = await api("/profile/" + currentUser.id);
+    const profile = profileResponse.user || profileResponse;
+
+    document.getElementById("profileName").value = profile.name || currentUser.name || "";
     document.getElementById("profileImage").value = profile.profile_image || "";
     document.getElementById("profileBio").value = profile.bio || "";
   } catch (error) {
-    toast("Profiel kon niet worden geladen.");
+    console.error("FaithTube profiel laden mislukt:", error);
+    toast("Profiel kon niet worden geladen: " + error.message);
   }
 }
 
@@ -747,12 +755,13 @@ async function saveProfile() {
   }
 
   try {
-    const updated = await api("/profile", {
+    const updateResponse = await api("/profile", {
       method: "PUT",
       body: JSON.stringify({ name, profileImage, bio })
     });
 
-    currentUser = { ...currentUser, ...updated };
+    const updatedUser = updateResponse.user || updateResponse;
+    currentUser = { ...currentUser, ...updatedUser };
     updateProfileButton();
     toast("Je profiel is opgeslagen!");
   } catch (error) {
