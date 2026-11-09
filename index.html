@@ -624,10 +624,10 @@ async function watchVideo(id) {
       : API_BASE.replace(/\/$/, "") + "/" + videoUrl.replace(/^\//, "");
     player = `
       <div class="video-player-wrap" style="width:100%;margin-bottom:18px;background:#000;border-radius:14px;overflow:hidden">
-        <video class="video-player" controls playsinline preload="metadata"
+        <video class="video-player" src="${escapeHTML(playableUrl)}" controls playsinline preload="auto"
           style="display:block;width:100%;max-height:75vh;min-height:220px;background:#000;object-fit:contain"
-          onerror="this.insertAdjacentHTML('afterend','<p style=&quot;color:white;padding:12px&quot;>Deze video kan niet worden afgespeeld. Controleer of het bestand MP4 of WebM is.</p>')">
-          <source src="${escapeHTML(playableUrl)}">
+          onloadedmetadata="this.dataset.ready='yes'"
+          onerror="this.insertAdjacentHTML('afterend','<div style=&quot;color:white;padding:12px&quot;>De video kon niet worden geladen. <a href=&quot;'+this.src+'&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot; style=&quot;color:#e7bd62&quot;>Open het videobestand rechtstreeks</a></div>')">
           Je browser kan deze video niet afspelen.
         </video>
       </div>`;
