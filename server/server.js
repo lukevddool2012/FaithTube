@@ -14,7 +14,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const JWT_SECRET = process.env.JWT_SECRET;
-const ADMIN_EMAIL = "liekevan2020@gmail.com";
+const ADMIN_EMAIL = "lukevandendool2012@gmail.com";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
 if (!JWT_SECRET || !ADMIN_PASSWORD) {
