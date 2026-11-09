@@ -327,7 +327,7 @@ app.delete("/account", authenticate, (req, res) => {
         return res.status(403).json({ error: "Het beheerdersaccount kan niet via deze functie worden verwijderd." });
     }
     const userId = Number(req.user.id);
-    const ownedVideos = db.prepare("SELECT video_url FROM videos WHERE user_id = ?").all(userId);
+    const ownedVideos = db.prepare("SELECT video_url, thumbnail_url FROM videos WHERE user_id = ?").all(userId);
     const removeAccount = db.transaction(() => {
         db.prepare("DELETE FROM comments WHERE user_id = ?").run(userId);
         db.prepare("DELETE FROM comments WHERE video_id IN (SELECT id FROM videos WHERE user_id = ?)").run(userId);
@@ -340,9 +340,11 @@ app.delete("/account", authenticate, (req, res) => {
     try {
         removeAccount();
         for (const video of ownedVideos) {
-            if (video.video_url && video.video_url.startsWith("/uploads/")) {
-                const filePath = path.join(uploadDir, path.basename(video.video_url));
-                if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+            for (const mediaUrl of [video.video_url, video.thumbnail_url]) {
+                if (typeof mediaUrl === "string" && mediaUrl.startsWith("/uploads/")) {
+                    const filePath = path.join(uploadDir, path.basename(mediaUrl));
+                    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+                }
             }
         }
         res.json({ success: true, message: "Je account en de bijbehorende gegevens zijn definitief verwijderd." });
@@ -861,7 +863,7 @@ app.post("/admin/videos/:id/approve", authenticate, adminOnly, (req, res) => {
 // VIDEO AFWIJZEN
 app.delete("/admin/videos/:id", authenticate, adminOnly, (req, res) => {
     const video = db.prepare(
-        "SELECT video_url FROM videos WHERE id = ?"
+        "SELECT video_url, thumbnail_url FROM videos WHERE id = ?"
     ).get(req.params.id);
 
     if (video) {
