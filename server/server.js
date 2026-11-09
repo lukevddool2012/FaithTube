@@ -42,6 +42,27 @@ ensureColumn("videos", "bible_reference", "TEXT");
 ensureColumn("videos", "study_content", "TEXT");
 ensureColumn("users", "profile_image", "TEXT");
 ensureColumn("users", "bio", "TEXT");
+ensureColumn("videos", "views_count", "INTEGER NOT NULL DEFAULT 0");
+
+// Kijkgeschiedenis en meldingen
+db.exec(`
+    CREATE TABLE IF NOT EXISTS watch_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        video_id INTEGER NOT NULL,
+        watched_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, video_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS notifications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        message TEXT NOT NULL,
+        is_read INTEGER NOT NULL DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+`);
+
 
 // Bewaar profielgegevens van het aparte beheerdersaccount.
 db.exec(`CREATE TABLE IF NOT EXISTS admin_profile (
@@ -504,6 +525,85 @@ app.post("/videos", authenticate, upload.single("video"), (req, res) => {
 
         res.status(500).json({ error: "Je inzending is mislukt." });
     }
+});
+
+// KIJKGESCHIEDENIS
+app.get("/history", authenticate, (req, res) => {
+    if (req.user.role === "admin") return res.json([]);
+
+    const history = db.prepare(`
+        SELECT video_id, watched_at
+        FROM watch_history
+        WHERE user_id = ?
+        ORDER BY watched_at DESC
+        LIMIT 100
+    `).all(req.user.id);
+
+    res.json(history);
+});
+
+app.delete("/history", authenticate, (req, res) => {
+    if (req.user.role !== "admin") {
+        db.prepare("DELETE FROM watch_history WHERE user_id = ?").run(req.user.id);
+    }
+    res.json({ success: true });
+});
+
+// VIDEO WEERGEVEN EN OPSLAAN IN KIJKGESCHIEDENIS
+app.post("/videos/:id/view", authenticate, (req, res) => {
+    const video = db.prepare(
+        "SELECT id FROM videos WHERE id = ? AND approved = 1"
+    ).get(req.params.id);
+
+    if (!video) return res.status(404).json({ error: "Video niet gevonden." });
+
+    db.prepare(
+        "UPDATE videos SET views_count = views_count + 1 WHERE id = ?"
+    ).run(video.id);
+
+    if (req.user.role !== "admin" && getUser(req.user.id)) {
+        db.prepare(`
+            INSERT INTO watch_history (user_id, video_id, watched_at)
+            VALUES (?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(user_id, video_id) DO UPDATE SET
+                watched_at = CURRENT_TIMESTAMP
+        `).run(req.user.id, video.id);
+    }
+
+    res.json({ success: true });
+});
+
+// MELDINGEN
+app.get("/notifications", authenticate, (req, res) => {
+    if (req.user.role === "admin") return res.json([]);
+
+    const items = db.prepare(`
+        SELECT id, message, is_read, created_at
+        FROM notifications
+        WHERE user_id = ?
+        ORDER BY created_at DESC
+        LIMIT 100
+    `).all(req.user.id);
+
+    res.json(items);
+});
+
+app.post("/notifications/:id/read", authenticate, (req, res) => {
+    if (req.user.role === "admin") {
+        return res.status(404).json({ error: "Melding niet gevonden." });
+    }
+
+    const result = db.prepare(`
+        UPDATE notifications
+        SET is_read = 1
+        WHERE id = ? AND user_id = ?
+    `).run(req.params.id, req.user.id);
+
+    if (!result.changes) {
+        return res.status(404).json({ error: "Melding niet gevonden." });
+    }
+
+    res.json({ success: true });
 });
 
 // GOEDGEKEURDE VIDEO'S
