@@ -548,7 +548,7 @@ function videoCard(video) {
     <article class="video-card" onclick="watchVideo(${Number(video.id)})">
       <div class="video-thumb">
         ${video.thumbnail_url
-          ? `<img src="${escapeHTML(/^https?:\\/\\//i.test(video.thumbnail_url) ? video.thumbnail_url : API_BASE.replace(/\\/$/, "") + "/" + video.thumbnail_url.replace(/^\\//, ""))}" alt="">`
+          ? `<img src="${escapeHTML(video.thumbnail_url.startsWith("http") ? video.thumbnail_url : API_BASE + video.thumbnail_url)}" alt="">`
           : "▶"}
       </div>
       <div class="video-info">
