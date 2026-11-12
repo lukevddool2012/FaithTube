@@ -215,6 +215,7 @@ button{cursor:pointer}
         </div>
         <div class="section"><h2 class="section-title">🔥 Populaire video's</h2><div id="popularVideos" class="video-grid"><div class="empty-state">Video's laden...</div></div></div>
         <div class="section"><h2 class="section-title">✨ Nieuw op FaithTube</h2><div id="newVideos" class="video-grid"><div class="empty-state">Video's laden...</div></div></div>
+        <div class="section"><h2 class="section-title">✦ Aanbevolen voor jou</h2><div id="recommendedVideos" class="video-grid"></div></div>
         <div class="panel"><h2>📖 Bijbelgedachte van vandaag</h2><p><strong class="gold">Psalm 23:1</strong></p><p>De HEER is mijn herder, het ontbreekt mij aan niets.</p></div>
       </section>
 
@@ -539,6 +540,7 @@ async function loadVideos() {
     renderVideoList("popularVideos", popular.slice(0, 8));
     renderVideoList("newVideos", [...approvedVideos].slice(0, 8));
     renderVideoList("allVideos", approvedVideos);
+    renderRecommendedVideos();
   } catch (error) {
     toast("Video's konden niet worden geladen.");
   }
@@ -561,6 +563,17 @@ function videoCard(video) {
   `;
 }
 
+function renderRecommendedVideos() {
+  const element = document.getElementById("recommendedVideos");
+  if (!element) return;
+  const followedIds = new Set((following || []).map(item => Number(item.id)));
+  const ranked = [...approvedVideos].map(video => {
+    let score = Math.log1p(Number(video.views_count || 0));
+    if (followedIds.has(Number(video.user_id))) score += 5;
+    return { video, score };
+  }).sort((a, b) => b.score - a.score);
+  renderVideoList("recommendedVideos", ranked.slice(0, 8).map(item => item.video));
+}
 function renderVideoList(elementId, videos) {
   const element = document.getElementById(elementId);
   if (!element) return;
