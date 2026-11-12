@@ -234,7 +234,7 @@ button{cursor:pointer}
         <div id="playlistList"></div>
       </section>
 
-      <section id="page-notifications" class="page"><h1 class="page-heading">♢ Meldingen</h1><p class="page-description">Bekijk je FaithTube-meldingen.</p><div id="notificationList"></div></section>
+      <section id="page-notifications" class="page"><h1 class="page-heading">♢ Meldingen</h1><p class="page-description">Bekijk je FaithTube-meldingen.</p><div class="panel"><h2>Pushmeldingen</h2><p class="page-description">Ontvang een melding wanneer je video is goedgekeurd.</p><button class="gold-btn" type="button" onclick="enablePushNotifications()">Pushmeldingen inschakelen</button></div><div id="notificationList"></div></section>
 
       <section id="page-upload" class="page">
         <h1 class="page-heading">＋ Video uploaden</h1><p class="page-description">Deel een preek, worship of Bijbelstudie. Een beheerder moet je inzending eerst goedkeuren.</p>
@@ -245,6 +245,9 @@ button{cursor:pointer}
             <div class="field full"><label>Beschrijving</label><textarea id="uploadDescription" rows="3"></textarea></div>
             <div class="field full"><label>Videobestand (maximaal 500 MB)</label><input id="uploadFile" type="file" accept="video/*"></div>
             <div class="field full">
+              <label>Ondertitels (optioneel, WebVTT)</label>
+              <input id="uploadCaptionsUrl" type="url" placeholder="https://.../ondertitels.vtt">
+              <p class="page-description">Voeg een openbare link naar een .vtt-ondertitelbestand toe.</p>
               <label>Thumbnail / omslagafbeelding (optioneel)</label>
               <input id="uploadThumbnail" type="file" accept="image/*" onchange="previewUploadThumbnail(event)">
               <p class="page-description">Kies zelf een afbeelding. Laat je dit leeg, dan maakt FaithTube automatisch een afbeelding uit je video.</p>
@@ -988,6 +991,7 @@ async function uploadVideo() {
   formData.append("description", description);
   formData.append("bibleReference", bibleReference);
   formData.append("studyContent", studyContent);
+  formData.append("captionsUrl", document.getElementById("uploadCaptionsUrl").value.trim());
   if (file) formData.append("video", file);
   const thumbnailFile = document.getElementById("uploadThumbnail").files[0];
   if (thumbnailFile) {
@@ -1035,7 +1039,7 @@ async function uploadVideo() {
     progressText.textContent = "Upload voltooid! Je video wacht op goedkeuring.";
     toast("Je video is geüpload en wacht op goedkeuring.");
 
-    ["uploadTitle", "uploadDescription", "uploadUrl", "bibleReference", "studyContent"]
+    ["uploadTitle", "uploadDescription", "uploadUrl", "uploadCaptionsUrl", "bibleReference", "studyContent"]
       .forEach(id => document.getElementById(id).value = "");
     document.getElementById("uploadFile").value = "";
     document.getElementById("uploadThumbnail").value = "";
@@ -1419,6 +1423,28 @@ async function deletePlaylist(id) {
 }
 
 /* MELDINGEN */
+
+function base64UrlToUint8Array(value) {
+  const padding = "=".repeat((4 - value.length % 4) % 4);
+  const base64 = (value + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const raw = atob(base64);
+  return Uint8Array.from([...raw].map(char => char.charCodeAt(0)));
+}
+
+async function enablePushNotifications() {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) { toast("Deze browser ondersteunt geen pushmeldingen."); return; }
+  try {
+    const config = await api("/push/public-key");
+    if (!config.enabled || !config.publicKey) { toast("Pushmeldingen moeten nog door de beheerder worden ingesteld."); return; }
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") { toast("Je hebt geen toestemming gegeven voor meldingen."); return; }
+    const registration = await navigator.serviceWorker.ready;
+    let subscription = await registration.pushManager.getSubscription();
+    if (!subscription) subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: base64UrlToUint8Array(config.publicKey) });
+    await api("/push/subscribe", { method: "POST", body: JSON.stringify({ subscription: subscription.toJSON() }) });
+    toast("Pushmeldingen zijn ingeschakeld!");
+  } catch (error) { toast(error.message || "Pushmeldingen instellen is mislukt."); }
+}
 
 async function loadNotifications() {
   try {
