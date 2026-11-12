@@ -281,6 +281,7 @@ button{cursor:pointer}
       </section>
 
       <section id="page-admin" class="page">
+        <div class="section"><h2 class="section-title">Meldingen van gebruikers</h2><div id="adminReports"></div></div>
         <h1 class="page-heading">⚙ Beheerdersdashboard</h1><p class="page-description">Beheer video's, accounts en reacties.</p>
         <div class="section"><h2 class="section-title">⏳ Video's die wachten op goedkeuring</h2><div id="pendingVideos"></div></div>
         <div class="section"><h2 class="section-title">👥 Accounts beheren</h2><div id="adminUsers"></div></div>
@@ -664,6 +665,7 @@ async function watchVideo(id) {
       <button class="action-btn" onclick="toggleFavorite(${Number(video.id)})">♡ Favoriet</button>
       <button class="action-btn" onclick="toggleLike(${Number(video.id)})">👍 Leuk</button>
       <button class="action-btn" onclick="addToPlaylist(${Number(video.id)})">＋ Afspeellijst</button>
+      <button class="action-btn" onclick="reportVideo(${Number(video.id)})">⚑ Video melden</button>
       ${Number(video.user_id) !== Number(currentUser.id)
         ? `<button class="action-btn" onclick="followUser(${Number(video.user_id)})">Volgen</button>`
         : ""}
@@ -1451,6 +1453,34 @@ async function readNotification(id) {
 }
 </script>
 <script>
+async function reportVideo(videoId) {
+  const reason = prompt("Reden: Ongepaste inhoud, Auteursrecht, Misleidende informatie, Spam of Anders");
+  if (!reason) return;
+  const details = prompt("Extra uitleg (optioneel):") || "";
+  try {
+    await api("/videos/" + videoId + "/report", { method: "POST", body: JSON.stringify({ reason: reason.trim(), details }) });
+    toast("Bedankt. Je melding is verstuurd.");
+  } catch (error) { toast(error.message); }
+}
+
+async function loadAdminReports() {
+  const element = document.getElementById("adminReports");
+  if (!element) return;
+  try {
+    const reports = await api("/admin/reports");
+    if (!reports.length) { element.innerHTML = "<div class='empty-state'>Geen open meldingen.</div>"; return; }
+    element.innerHTML = reports.map(report => "<div class='panel'><h3>" + escapeHTML(report.video_title || "Video verwijderd") + "</h3><p>Reden: " + escapeHTML(report.reason) + "</p><p>Door: " + escapeHTML(report.reporter_name || "Onbekend") + "</p><p>" + escapeHTML(report.details || "Geen extra uitleg") + "</p><button class='gold-btn' onclick='updateReportStatus(" + Number(report.id) + ", &quot;resolved&quot;)'>Afgehandeld</button> <button class='action-btn' onclick='updateReportStatus(" + Number(report.id) + ", &quot;dismissed&quot;)'>Negeren</button></div>").join("");
+  } catch (error) { element.innerHTML = "<div class='empty-state'>Meldingen laden niet.</div>"; }
+}
+
+async function updateReportStatus(id, status) {
+  try {
+    await api("/admin/reports/" + id + "/status", { method: "POST", body: JSON.stringify({ status }) });
+    await loadAdminReports();
+    toast("Melding bijgewerkt.");
+  } catch (error) { toast(error.message); }
+}
+
 /* BEHEERDERSDASHBOARD */
 
 async function renderAdmin() {
@@ -1488,6 +1518,7 @@ async function renderAdmin() {
 
     await loadAdminUsers();
     await loadAdminComments();
+    await loadAdminReports();
   } catch (error) {
     toast("Beheerdersgegevens konden niet worden geladen: " + error.message);
   }
