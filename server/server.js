@@ -595,7 +595,8 @@ app.post("/videos", authenticate, upload.single("video"), (req, res) => {
             description,
             category,
             bibleReference,
-            studyContent
+            studyContent,
+            captionsUrl
         } = req.body;
 
         const hasVideo = Boolean(req.file);
@@ -683,21 +684,33 @@ app.post("/videos", authenticate, upload.single("video"), (req, res) => {
             thumbnailUrl = `/uploads/${thumbnailFilename}`;
         }
 
+        let validCaptionsUrl = null;
+        if (typeof captionsUrl === "string" && captionsUrl.trim()) {
+            try {
+                const parsed = new URL(captionsUrl.trim());
+                if (!["http:", "https:"].includes(parsed.protocol) || !parsed.pathname.toLowerCase().endsWith(".vtt")) throw new Error("invalid WebVTT URL");
+                validCaptionsUrl = parsed.href;
+            } catch {
+                if (req.file) fs.unlinkSync(req.file.path);
+                return res.status(400).json({ error: "Gebruik een geldige link naar een ondertitelbestand dat eindigt op .vtt." });
+            }
+        }
         const videoUrl = hasVideo ? `/uploads/${req.file.filename}` : validVideoLink;
 
         const result = db.prepare(`
             INSERT INTO videos
             (
-                title, description, category, video_url, thumbnail_url,
+                title, description, category, video_url, thumbnail_url, captions_url,
                 user_id, approved, bible_reference, study_content
             )
-            VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
         `).run(
             title.trim(),
             (description || "").trim(),
             category,
             videoUrl,
             thumbnailUrl,
+            validCaptionsUrl,
             req.user.role === "admin" ? null : req.user.id,
             category === "Bijbelstudie" ? bibleReference.trim() : null,
             category === "Bijbelstudie" && !hasVideoSource ? studyContent.trim() : null
