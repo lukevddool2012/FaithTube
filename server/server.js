@@ -585,7 +585,7 @@ app.post("/videos", authenticate, upload.single("video"), (req, res) => {
             }
 
             if (hasVideoSource && (typeof description !== "string" || !description.trim())) {
-                fs.unlinkSync(req.file.path);
+                if (req.file) fs.unlinkSync(req.file.path);
                 return res.status(400).json({
                     error: "Voeg een beschrijving toe bij je video."
                 });
@@ -605,7 +605,7 @@ app.post("/videos", authenticate, upload.single("video"), (req, res) => {
             }
 
             if (typeof description !== "string" || !description.trim()) {
-                fs.unlinkSync(req.file.path);
+                if (req.file) fs.unlinkSync(req.file.path);
                 return res.status(400).json({
                     error: "Vul een beschrijving bij de video in."
                 });
