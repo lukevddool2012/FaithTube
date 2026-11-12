@@ -193,6 +193,7 @@ button{cursor:pointer}
       <div class="nav-label">ACCOUNT</div>
       <button class="nav-item" onclick="showPage('upload',this)"><span class="nav-icon">＋</span><span>Video uploaden</span></button>
       <button class="nav-item" onclick="showPage('profile',this)"><span class="nav-icon">◉</span><span>Mijn profiel</span></button>
+      <button class="nav-item" onclick="showPage('legal',this)"><span class="nav-icon">§</span><span>Privacy & voorwaarden</span></button>
       <button class="nav-item hidden" id="adminNav" onclick="showPage('admin',this)"><span class="nav-icon">⚙</span><span>Beheerder</span></button>
       <button class="nav-item" onclick="logout()"><span class="nav-icon">⇥</span><span>Uitloggen</span></button>
     </aside>
@@ -281,7 +282,20 @@ button{cursor:pointer}
         </div></div>
       </section>
 
-      <section id="page-admin" class="page">
+      <section id="page-legal" class="page">
+<h1 class="page-heading">Privacy & voorwaarden</h1>
+<p class="page-description">Basisinformatie voor FaithTube-gebruikers. Deze teksten moeten vóór openbare lancering juridisch worden gecontroleerd en aangevuld met de juiste contactgegevens.</p>
+<div class="panel"><h2>Privacyverklaring</h2>
+<p>FaithTube verwerkt accountgegevens zoals naam, e-mailadres en veilig gehashte wachtwoorden, profielgegevens, video-inzendingen, reacties, favorieten, gevolgde kanalen, meldingen en kijkgeschiedenis om de dienst te laten werken en te beveiligen.</p>
+<p style="margin-top:12px">Video-inzendingen worden pas zichtbaar na goedkeuring. Deel geen persoonsgegevens van anderen zonder toestemming. Je kunt je account via je profiel verwijderen. De definitieve verklaring moet de verantwoordelijke, contactgegevens, bewaartermijnen, rechtsgronden, hostinglocaties en privacyrechten concreet benoemen.</p></div>
+<div class="panel"><h2>Gebruiksvoorwaarden</h2>
+<p>Gebruik FaithTube respectvol en alleen voor wettige inhoud. Upload of deel uitsluitend materiaal waarvoor je de benodigde rechten en toestemmingen hebt.</p>
+<p style="margin-top:12px">Haat, bedreigingen, intimidatie, spam, misleiding, onrechtmatige inhoud en auteursrechtschendingen zijn niet toegestaan. De beheerder mag inzendingen controleren, afwijzen of verwijderen en kan accounts beperken bij misbruik.</p>
+<p style="margin-top:12px">Door een video in te sturen geef je FaithTube toestemming om die video na goedkeuring op het platform te tonen. Je behoudt zelf de rechten die je op de inhoud hebt. Meld mogelijke overtredingen via de meldknop bij een video.</p>
+<p style="margin-top:12px">De definitieve voorwaarden moeten nog contactgegevens, klachtenprocedure, aansprakelijkheidsregels, toepasselijk recht en een formele auteursrechtprocedure bevatten.</p></div>
+</section>
+
+<section id="page-admin" class="page">
         <div class="section"><h2 class="section-title">Meldingen van gebruikers</h2><div id="adminReports"></div></div>
         <h1 class="page-heading">⚙ Beheerdersdashboard</h1><p class="page-description">Beheer video's, accounts en reacties.</p>
         <div class="section"><h2 class="section-title">⏳ Video's die wachten op goedkeuring</h2><div id="pendingVideos"></div></div>
