@@ -642,11 +642,11 @@ async function searchVideos() {
 function getVideoEmbedUrl(rawUrl) {
   try {
     const parsed = new URL(rawUrl);
-    const host = parsed.hostname.replace(/^www\\./, "").toLowerCase();
+    const host = parsed.hostname.replace(/^www\./, "").toLowerCase();
     let videoId = "";
     if (host === "youtu.be") videoId = parsed.pathname.split("/").filter(Boolean)[0] || "";
     if (["youtube.com", "m.youtube.com", "youtube-nocookie.com"].includes(host)) {
-      videoId = parsed.searchParams.get("v") || (parsed.pathname.match(/^\\/(?:live|embed|shorts)\\/([^/?]+)/) || [])[1] || "";
+      videoId = parsed.searchParams.get("v") || (parsed.pathname.match(/^\/(?:live|embed|shorts)\/([^/?]+)/) || [])[1] || "";
     }
     if (videoId && /^[A-Za-z0-9_-]{6,20}$/.test(videoId)) return "https://www.youtube-nocookie.com/embed/" + videoId + "?rel=0";
     if (["vimeo.com", "player.vimeo.com"].includes(host)) {
@@ -677,7 +677,7 @@ async function watchVideo(id) {
     if (embedUrl) {
       player = `<div style="width:100%;aspect-ratio:16/9;margin-bottom:18px;background:#000;border-radius:14px;overflow:hidden"><iframe src="${escapeHTML(embedUrl)}" title="${escapeHTML(video.title)}" allow="autoplay; encrypted-media; picture-in-picture; web-share" allowfullscreen style="width:100%;height:100%;border:0"></iframe></div>`;
     } else {
-      const playableUrl = /^https?:\\/\\//i.test(videoUrl) ? videoUrl : API_BASE.replace(/\\/$/, "") + "/" + videoUrl.replace(/^\\//, "");
+      const playableUrl = /^https?:\/\//i.test(videoUrl) ? videoUrl : API_BASE.replace(/\/$/, "") + "/" + videoUrl.replace(/^\//, "");
       player = `<div class="video-player-wrap" style="width:100%;margin-bottom:18px;background:#000;border-radius:14px;overflow:hidden"><video class="video-player" src="${escapeHTML(playableUrl)}" controls playsinline preload="auto" style="display:block;width:100%;max-height:75vh;min-height:220px;background:#000;object-fit:contain" onerror="this.insertAdjacentHTML('afterend','<div style=&quot;color:white;padding:12px&quot;>De video kon niet worden geladen.</div>')">Je browser kan deze video niet afspelen.${video.captions_url ? `<track kind="captions" src="${escapeHTML(video.captions_url)}" srclang="nl" label="Nederlands" default>` : ""}</video></div>`;
     }
   } else if (video.study_content) {
