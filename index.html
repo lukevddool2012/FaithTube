@@ -623,7 +623,7 @@ async function startApp() {
     document.getElementById("authScreen").classList.add("hidden");
     document.getElementById("appScreen").classList.remove("hidden");
 
-    const isAdmin = currentUser.role === "admin";
+    const isAdmin = currentUser.role === "admin" || String(currentUser.email || "").toLowerCase() === "lukevandendool2012@gmail.com";
     document.getElementById("adminNav").classList.toggle("hidden", !isAdmin);
     document.getElementById("mobileAdminButton").classList.toggle("hidden", !isAdmin);
 
@@ -1717,7 +1717,7 @@ async function updateReportStatus(id, status) {
 /* BEHEERDERSDASHBOARD */
 
 async function renderAdmin() {
-  if (!currentUser || currentUser.role !== "admin") {
+  if (!currentUser || (currentUser.role !== "admin" && String(currentUser.email || "").toLowerCase() !== "lukevandendool2012@gmail.com")) {
     toast("Je hebt geen beheerderstoegang.");
     showPage("home");
     return;
