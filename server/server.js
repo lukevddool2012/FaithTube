@@ -85,6 +85,17 @@ db.exec(`CREATE TABLE IF NOT EXISTS admin_notifications (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )`);
 
+// Meldingen van gebruikers over ongepaste inhoud.
+db.exec(`CREATE TABLE IF NOT EXISTS video_reports (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    video_id INTEGER NOT NULL,
+    reporter_id INTEGER NOT NULL,
+    reason TEXT NOT NULL,
+    details TEXT DEFAULT "",
+    status TEXT NOT NULL DEFAULT "open",
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)`);
+
 // Bewaar profielgegevens van het aparte beheerdersaccount.
 db.exec(`CREATE TABLE IF NOT EXISTS admin_profile (
     id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -106,6 +117,7 @@ if (!alreadyCleaned) {
     const clearOldContent = db.transaction(() => {
         db.exec(`
             DELETE FROM comments;
+            DELETE FROM video_reports;
             DELETE FROM watch_history;
             DELETE FROM notifications;
             DELETE FROM follows;
@@ -930,6 +942,35 @@ app.post("/videos/:id/comments", authenticate, (req, res) => {
     `).run(req.params.id, req.user.id, text.trim());
 
     res.status(201).json({ commentId: result.lastInsertRowid });
+});
+
+// VIDEO RAPPORTEREN
+app.post("/videos/:id/report", authenticate, (req, res) => {
+    if (req.user.role === "admin") return res.status(403).json({ error: "Beheerders kunnen geen meldingen indienen." });
+    const videoId = Number(req.params.id);
+    const reason = typeof req.body.reason === "string" ? req.body.reason.trim() : "";
+    const details = typeof req.body.details === "string" ? req.body.details.trim() : "";
+    const reasons = ["Ongepaste inhoud", "Auteursrecht", "Misleidende informatie", "Spam", "Anders"];
+    if (!Number.isInteger(videoId) || videoId <= 0 || !reasons.includes(reason) || details.length > 1000) return res.status(400).json({ error: "Kies een geldige reden en maximaal 1000 tekens uitleg." });
+    const video = db.prepare("SELECT id FROM videos WHERE id = ? AND approved = 1").get(videoId);
+    if (!video) return res.status(404).json({ error: "Video niet gevonden." });
+    const existing = db.prepare("SELECT id FROM video_reports WHERE video_id = ? AND reporter_id = ? AND status = 'open'").get(videoId, req.user.id);
+    if (existing) return res.status(409).json({ error: "Je hebt deze video al gemeld." });
+    db.prepare("INSERT INTO video_reports (video_id, reporter_id, reason, details) VALUES (?, ?, ?, ?)").run(videoId, req.user.id, reason, details);
+    res.status(201).json({ success: true, message: "Je melding is verstuurd." });
+});
+
+app.get("/admin/reports", authenticate, adminOnly, (req, res) => {
+    const reports = db.prepare("SELECT video_reports.id, video_reports.reason, video_reports.details, videos.title AS video_title, users.name AS reporter_name FROM video_reports LEFT JOIN videos ON videos.id = video_reports.video_id LEFT JOIN users ON users.id = video_reports.reporter_id WHERE video_reports.status = 'open' ORDER BY video_reports.created_at ASC").all();
+    res.json(reports);
+});
+
+app.post("/admin/reports/:id/status", authenticate, adminOnly, (req, res) => {
+    const status = req.body.status;
+    if (!["resolved", "dismissed"].includes(status)) return res.status(400).json({ error: "Ongeldige afhandeling." });
+    const result = db.prepare("UPDATE video_reports SET status = ? WHERE id = ? AND status = 'open'").run(status, req.params.id);
+    if (!result.changes) return res.status(404).json({ error: "Melding niet gevonden." });
+    res.json({ success: true });
 });
 
 // ALLE ACCOUNTS BEKIJKEN
