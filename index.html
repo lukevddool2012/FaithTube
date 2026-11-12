@@ -173,6 +173,85 @@ button{cursor:pointer}
 .mobile-bottom-nav svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .mobile-menu-backdrop{display:none;position:fixed;inset:60px 0 76px;background:#0008;z-index:30}
 
+
+/* FaithTube kleurrijkere Royal Edition */
+:root{
+  --navy:#10132b;
+  --navy2:#191d3d;
+  --gold:#f2c66d;
+  --white:#fffaf2;
+  --muted:#b9bfd7;
+  --line:rgba(190,178,255,.16);
+  --card:#20264a;
+}
+body{
+  background:
+    radial-gradient(ellipse at 12% 0%,rgba(111,76,190,.20),transparent 36%),
+    radial-gradient(ellipse at 92% 22%,rgba(36,169,174,.10),transparent 32%),
+    var(--navy);
+  color:var(--white);
+}
+#authScreen{
+  background:
+    radial-gradient(circle at 18% 18%,rgba(143,93,220,.34),transparent 38%),
+    radial-gradient(circle at 85% 82%,rgba(31,174,174,.20),transparent 34%),
+    var(--navy);
+}
+.auth-card{
+  background:linear-gradient(145deg,rgba(35,39,79,.98),rgba(23,28,59,.98));
+  border-color:rgba(190,178,255,.24);
+  box-shadow:0 24px 80px rgba(0,0,0,.38),0 0 45px rgba(130,91,205,.10);
+}
+.logo-icon{
+  background:linear-gradient(135deg,#a78bfa,#ed8bb7);
+  color:#17152f;
+  box-shadow:0 5px 18px rgba(167,139,250,.25);
+}
+.gold{color:var(--gold)}
+.topbar,.sidebar{
+  background:rgba(17,21,48,.94);
+  backdrop-filter:blur(16px);
+}
+.search-box{background:#252b50;border-color:rgba(190,178,255,.18)}
+.search-box:focus-within{border-color:#a78bfa;box-shadow:0 0 0 3px rgba(167,139,250,.12)}
+.nav-item{color:#d9dcf0}
+.nav-item:hover,.nav-item.active{
+  background:linear-gradient(90deg,rgba(144,112,224,.22),rgba(144,112,224,.07));
+  color:#f2c66d;
+}
+.hero{
+  background:
+    linear-gradient(90deg,rgba(13,16,39,.94),rgba(13,16,39,.40)),
+    radial-gradient(circle at 78% 25%,#a16bd1,#315c91 42%,#172044 76%);
+  border-color:rgba(190,178,255,.20);
+}
+.hero-tag{color:#f6d58d;background:rgba(242,198,109,.15)}
+.primary-btn,.gold-btn{
+  background:linear-gradient(110deg,#f2c66d,#f3a77d);
+  color:#211a35;
+  box-shadow:0 5px 16px rgba(242,166,125,.16);
+}
+.primary-btn:hover,.gold-btn:hover{background:linear-gradient(110deg,#ffda8a,#ffb18c);transform:translateY(-1px)}
+.video-card,.panel,.empty-state{
+  background:linear-gradient(145deg,#252b52,#1b2142);
+  border-color:rgba(190,178,255,.14);
+}
+.video-card:hover{border-color:rgba(242,198,109,.7);box-shadow:0 10px 28px rgba(0,0,0,.2)}
+.video-thumb{background:linear-gradient(135deg,#343b70,#285c70);color:#f2c66d}
+.category-chip{background:#242a50;border-color:rgba(190,178,255,.2)}
+.category-chip:hover{background:linear-gradient(110deg,#a78bfa,#ed9cba);color:#17152f}
+.action-btn{background:#30365f;border-color:rgba(190,178,255,.18)}
+.action-btn:hover{border-color:#a78bfa;color:#c4b5fd}
+.field input,.field textarea,.field select{background:#171d3b;border-color:rgba(190,178,255,.2)}
+.field input:focus,.field textarea:focus{border-color:#a78bfa;box-shadow:0 0 0 3px rgba(167,139,250,.10)}
+.comment strong{color:#f2c66d}
+#toast{background:linear-gradient(110deg,#f2c66d,#f3a77d);color:#211a35}
+.mobile-bottom-nav{
+  background:rgba(17,21,48,.96);
+  border-top-color:rgba(190,178,255,.22);
+}
+.mobile-bottom-nav button.active,.mobile-bottom-nav button:focus-visible{color:#f2c66d}
+
 </style>
 </head>
 <body>
