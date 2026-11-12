@@ -588,7 +588,7 @@ app.get("/me", authenticate, (req, res) => {
 });
 
 // VIDEO OF BIJBELSTUDIE INSTUREN
-app.post("/videos", authenticate, upload.single("video"), (req, res) => {
+app.post("/videos", authenticate, upload.single("video"), async (req, res) => {
     try {
         const {
             title,
@@ -717,8 +717,16 @@ app.post("/videos", authenticate, upload.single("video"), (req, res) => {
         );
 
         const submitter = req.user.role === "admin" ? "Beheerder" : (getUser(req.user.id)?.name || "Een gebruiker");
+        const adminMessage = submitter + " heeft een nieuwe " + category + " ingestuurd: " + title.trim();
         db.prepare("INSERT INTO admin_notifications (message, video_id) VALUES (?, ?)")
-            .run(submitter + " heeft een nieuwe " + category + " ingestuurd: " + title.trim(), result.lastInsertRowid);
+            .run(adminMessage, result.lastInsertRowid);
+
+        // Stuur dezelfde melding ook als pushbericht naar apparaten van de beheerder.
+        await sendPushToUser("faithtube-main-admin", {
+            title: "Nieuwe video ingestuurd op FaithTube",
+            body: adminMessage,
+            url: "/"
+        });
 
         res.status(201).json({
             message: "Je inzending wacht op goedkeuring.",
