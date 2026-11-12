@@ -56,6 +56,8 @@ button{cursor:pointer}
 .search-box button{background:none;border:0;color:var(--gold)}
 .profile-button{width:38px;height:38px;border-radius:50%;background:var(--gold);color:var(--navy);border:0;font-weight:bold;overflow:hidden}
 .profile-button img{width:100%;height:100%;object-fit:cover}
+.mobile-logout-button{display:none;align-items:center;justify-content:center;gap:4px;border:1px solid rgba(190,178,255,.24);border-radius:9px;background:#252b50;color:#f2c66d;padding:7px 8px;font-size:11px;font-weight:700}
+.mobile-logout-button svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 
 .gold-btn{background:var(--gold);color:var(--navy);border:0;border-radius:9px;padding:11px 16px;font-weight:bold}
 .gold-btn:hover,.primary-btn:hover{background:#f4d991}
@@ -114,6 +116,7 @@ button{cursor:pointer}
 #toast{position:fixed;bottom:22px;right:22px;background:var(--gold);color:var(--navy);padding:13px 18px;border-radius:9px;font-weight:bold;z-index:100;display:none}
 
 @media(max-width:800px){
+ .mobile-logout-button{display:flex}
  .topbar{padding:0 14px}
  .topbar .logo{font-size:20px}
  .sidebar{width:270px;max-width:82vw;top:60px;bottom:76px;left:0;z-index:35;padding:16px 12px;transform:translateX(-110%);transition:transform .24s ease;box-shadow:16px 0 40px #0008}
@@ -134,7 +137,7 @@ button{cursor:pointer}
  .topbar .logo{font-size:18px;gap:7px}
  .topbar .logo-icon{width:34px;height:34px;border-radius:11px}
  .topbar-left,.topbar-right{gap:9px}
- .search-box{width:min(38vw,170px);padding:0 9px}
+ .search-box{width:min(31vw,145px);padding:0 9px}
  .search-box input{padding:9px 2px;font-size:13px;min-width:0}
  .search-box button{font-size:18px}
  .profile-button{width:34px;height:34px;flex:0 0 34px}
@@ -296,6 +299,7 @@ body{
         <button onclick="searchVideos()">⌕</button>
       </div>
       <button class="profile-button" id="profileButton" onclick="showPage('profile')">FT</button>
+      <button type="button" class="mobile-logout-button" onclick="logout()" aria-label="Uitloggen" title="Uitloggen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H3M14 3h6a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1h-6"/></svg><span>Uit</span></button>
     </div>
   </header>
 
