@@ -6,6 +6,7 @@ const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const multer = require("multer");
+const webpush = require("web-push");
 const path = require("path");
 const fs = require("fs");
 const db = require("./database");
@@ -105,6 +106,16 @@ db.exec(`CREATE TABLE IF NOT EXISTS admin_notifications (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )`);
 
+// Web push-abonnementen per gebruiker.
+db.exec(`CREATE TABLE IF NOT EXISTS push_subscriptions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    endpoint TEXT NOT NULL UNIQUE,
+    subscription_json TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)`);
+ensureColumn("videos", "captions_url", "TEXT");
+
 // Meldingen van gebruikers over ongepaste inhoud.
 db.exec(`CREATE TABLE IF NOT EXISTS video_reports (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -176,6 +187,23 @@ const upload = multer({
         callback(null, true);
     }
 });
+
+const vapidPublicKey = process.env.VAPID_PUBLIC_KEY || "";
+const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY || "";
+const vapidSubject = process.env.VAPID_SUBJECT || "mailto:beheer@faithtube.nl";
+const pushEnabled = Boolean(vapidPublicKey && vapidPrivateKey);
+if (pushEnabled) webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
+async function sendPushToUser(userId, payload) {
+    if (!pushEnabled) return;
+    const rows = db.prepare("SELECT id, subscription_json FROM push_subscriptions WHERE user_id = ?").all(userId);
+    for (const row of rows) {
+        try { await webpush.sendNotification(JSON.parse(row.subscription_json), JSON.stringify(payload)); }
+        catch (error) {
+            if (error.statusCode === 404 || error.statusCode === 410) db.prepare("DELETE FROM push_subscriptions WHERE id = ?").run(row.id);
+            else console.error("Pushmelding mislukt:", error.message);
+        }
+    }
+}
 
 // Inlogcontrole
 function authenticate(req, res, next) {
@@ -812,6 +840,22 @@ app.post("/videos/:id/view", authenticate, (req, res) => {
     res.json({ success: true });
 });
 
+app.get("/push/public-key", authenticate, (req, res) => {
+    res.json({ enabled: pushEnabled, publicKey: pushEnabled ? vapidPublicKey : "" });
+});
+app.post("/push/subscribe", authenticate, (req, res) => {
+    if (!pushEnabled) return res.status(503).json({ error: "Pushmeldingen zijn nog niet geconfigureerd." });
+    const sub = req.body.subscription;
+    if (!sub || typeof sub.endpoint !== "string" || !sub.keys || typeof sub.keys.p256dh !== "string" || typeof sub.keys.auth !== "string") return res.status(400).json({ error: "Ongeldig push-abonnement." });
+    db.prepare("INSERT INTO push_subscriptions (user_id, endpoint, subscription_json) VALUES (?, ?, ?) ON CONFLICT(endpoint) DO UPDATE SET user_id = excluded.user_id, subscription_json = excluded.subscription_json").run(req.user.id, sub.endpoint, JSON.stringify(sub));
+    res.status(201).json({ success: true });
+});
+app.delete("/push/subscribe", authenticate, (req, res) => {
+    const endpoint = typeof req.body.endpoint === "string" ? req.body.endpoint : "";
+    db.prepare("DELETE FROM push_subscriptions WHERE user_id = ? AND endpoint = ?").run(req.user.id, endpoint);
+    res.json({ success: true });
+});
+
 // MELDINGEN
 app.get("/notifications", authenticate, (req, res) => {
     if (req.user.role === "admin") {
@@ -884,11 +928,15 @@ app.get("/admin/videos", authenticate, adminOnly, (req, res) => {
 });
 
 // VIDEO GOEDKEUREN
-app.post("/admin/videos/:id/approve", authenticate, adminOnly, (req, res) => {
-    const result = db.prepare(
-        "UPDATE videos SET approved = 1 WHERE id = ?"
-    ).run(req.params.id);
-
+app.post("/admin/videos/:id/approve", authenticate, adminOnly, async (req, res) => {
+    const video = db.prepare("SELECT id, title, user_id FROM videos WHERE id = ?").get(req.params.id);
+    if (!video) return res.status(404).json({ error: "Video niet gevonden." });
+    const result = db.prepare("UPDATE videos SET approved = 1 WHERE id = ?").run(req.params.id);
+    if (video.user_id) {
+        const message = "Je video " + video.title + " is goedgekeurd en staat nu op FaithTube.";
+        db.prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)").run(video.user_id, message);
+        await sendPushToUser(video.user_id, { title: "Je video staat op FaithTube!", body: video.title, url: "/" });
+    }
     res.json({ success: result.changes > 0 });
 });
 
