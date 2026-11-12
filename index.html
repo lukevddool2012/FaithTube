@@ -107,26 +107,65 @@ button{cursor:pointer}
 #toast{position:fixed;bottom:22px;right:22px;background:var(--gold);color:var(--navy);padding:13px 18px;border-radius:9px;font-weight:bold;z-index:100;display:none}
 
 @media(max-width:800px){
- .topbar{padding:0 12px}
- .topbar .logo{font-size:19px}
- .sidebar{width:65px;padding:12px 6px}
- .nav-item{justify-content:center;padding:13px 5px}
- .nav-item span:last-child,.nav-label{display:none}
- .main-content{margin-left:65px;width:calc(100% - 65px);padding:17px 12px}
- .hero{padding:23px}
+ .topbar{padding:0 14px}
+ .topbar .logo{font-size:20px}
+ .sidebar{width:270px;max-width:82vw;top:60px;bottom:76px;left:0;z-index:35;padding:16px 12px;transform:translateX(-110%);transition:transform .24s ease;box-shadow:16px 0 40px #0008}
+ .sidebar.mobile-open{transform:translateX(0)}
+ .nav-item{justify-content:flex-start;padding:12px 14px;gap:14px;font-size:14px}
+ .nav-item span:last-child,.nav-label{display:initial}
+ .nav-label{display:block}
+ .main-content{margin-left:0;width:100%;padding:20px 16px 30px}
+ .hero{padding:25px;min-height:270px}
  .download-btn{font-size:12px;padding:9px}
+ .mobile-bottom-nav{display:grid}
+ .mobile-menu-backdrop.visible{display:block}
+ #toast{bottom:88px;left:14px;right:14px;text-align:center}
 }
 @media(max-width:520px){
- .topbar{height:60px}
- .topbar .logo-icon{width:34px;height:34px}
- .sidebar{top:60px;width:55px}
- .main-content{margin-left:55px;width:calc(100% - 55px);padding:13px 9px}
- .search-box{width:27vw}
- .video-grid{grid-template-columns:1fr}
- .form-grid{grid-template-columns:1fr}
+ body{background:#071426}
+ .topbar{height:60px;padding:0 12px;gap:8px}
+ .topbar .logo{font-size:18px;gap:7px}
+ .topbar .logo-icon{width:34px;height:34px;border-radius:11px}
+ .topbar-left,.topbar-right{gap:9px}
+ .search-box{width:min(38vw,170px);padding:0 9px}
+ .search-box input{padding:9px 2px;font-size:13px;min-width:0}
+ .search-box button{font-size:18px}
+ .profile-button{width:34px;height:34px;flex:0 0 34px}
+ .main-content{padding:16px 13px 28px}
+ .page-heading{font-size:24px}
+ .page-description{font-size:14px;margin-bottom:18px}
+ .hero{min-height:260px;padding:23px 20px;border-radius:20px;margin-bottom:22px}
+ .hero h1{font-size:34px}
+ .hero p{font-size:14px}
+ .section{margin-bottom:26px}
+ .section-title{font-size:19px}
+ .video-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+ .video-card{border-radius:14px}
+ .video-info{padding:10px}
+ .video-info h3{font-size:13px;line-height:1.35}
+ .video-info p{font-size:11px}
+ .video-thumb{font-size:30px}
+ .category-list{gap:8px;margin-bottom:22px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:5px}
+ .category-chip{white-space:nowrap;padding:9px 13px;font-size:13px}
+ .panel{padding:16px;border-radius:15px}
+ .panel h2{font-size:18px}
+ .form-grid{grid-template-columns:1fr;gap:10px}
  .form-grid .full{grid-column:auto}
+ .field input,.field textarea,.field select{padding:14px;font-size:16px}
+ .gold-btn,.action-btn,.danger-btn{min-height:42px}
+ .video-player{border-radius:14px}
+ .video-detail-title{font-size:22px}
  .auth-card{padding:24px 19px}
+ .mobile-bottom-nav{height:72px;padding:7px 5px max(7px,env(safe-area-inset-bottom));}
+ .mobile-bottom-nav button{font-size:10px;gap:4px}
+ .mobile-bottom-nav svg{width:21px;height:21px}
 }
+.mobile-bottom-nav{display:none;position:fixed;z-index:40;left:0;right:0;bottom:0;grid-template-columns:repeat(6,minmax(0,1fr));background:rgba(7,20,38,.96);border-top:1px solid rgba(231,189,98,.2);backdrop-filter:blur(18px);padding:8px 5px calc(8px + env(safe-area-inset-bottom));}
+.mobile-bottom-nav button{border:0;background:transparent;color:#a9b5c6;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;font-size:10px;font-weight:600;min-width:0}
+.mobile-bottom-nav button.active,.mobile-bottom-nav button:focus-visible{color:var(--gold)}
+.mobile-bottom-nav svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.mobile-menu-backdrop{display:none;position:fixed;inset:60px 0 76px;background:#0008;z-index:30}
+
 </style>
 </head>
 <body>
@@ -307,6 +346,15 @@ button{cursor:pointer}
       </section>
     </main>
   </div>
+  <div class="mobile-menu-backdrop" id="mobileMenuBackdrop" onclick="toggleMobileMenu(false)"></div>
+  <nav class="mobile-bottom-nav" aria-label="Snelle navigatie">
+    <button class="active" data-mobile-page="home" onclick="mobileNavigate('home',this)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7"/><path d="M5 9v12h14V9M9 21v-7h6v7"/></svg><span>Home</span></button>
+    <button data-mobile-page="videos" onclick="mobileNavigate('videos',this)"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="m10 8 6 4-6 4z"/></svg><span>Video's</span></button>
+    <button data-mobile-page="upload" onclick="mobileNavigate('upload',this)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/><circle cx="12" cy="12" r="9"/></svg><span>Upload</span></button>
+    <button data-mobile-page="notifications" onclick="mobileNavigate('notifications',this)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><span>Meldingen</span></button>
+    <button data-mobile-page="profile" onclick="mobileNavigate('profile',this)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Profiel</span></button>
+    <button onclick="toggleMobileMenu()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span>Meer</span></button>
+  </nav>
 </section>
 
 <div id="toast"></div>
@@ -517,7 +565,24 @@ function updateProfileButton() {
 
 /* PAGINA'S */
 
+function toggleMobileMenu(force) {
+  const sidebar = document.querySelector(".sidebar");
+  const backdrop = document.getElementById("mobileMenuBackdrop");
+  if (!sidebar || !backdrop) return;
+  const open = typeof force === "boolean" ? force : !sidebar.classList.contains("mobile-open");
+  sidebar.classList.toggle("mobile-open", open);
+  backdrop.classList.toggle("visible", open);
+}
+function mobileNavigate(page, button) {
+  showPage(page);
+  document.querySelectorAll(".mobile-bottom-nav button").forEach(item => item.classList.remove("active"));
+  if (button) button.classList.add("active");
+}
 function showPage(page, clickedButton = null) {
+  toggleMobileMenu(false);
+  document.querySelectorAll(".mobile-bottom-nav button[data-mobile-page]").forEach(button => {
+    button.classList.toggle("active", button.dataset.mobilePage === page);
+  });
   document.querySelectorAll(".page").forEach(section => {
     section.classList.remove("active");
   });
