@@ -11,7 +11,27 @@ const fs = require("fs");
 const db = require("./database");
 
 const app = express();
+app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
+
+// Eenvoudige bescherming tegen herhaald proberen in te loggen of accounts aan te maken.
+const authRateLimits = new Map();
+function limitAuthAttempts(req, res, next) {
+    const key = String(req.ip || req.socket.remoteAddress || "unknown");
+    const now = Date.now();
+    const windowMs = 15 * 60 * 1000;
+    const maxAttempts = 10;
+    let entry = authRateLimits.get(key);
+    if (!entry || now >= entry.resetAt) {
+        entry = { count: 0, resetAt: now + windowMs };
+    }
+    if (entry.count >= maxAttempts) {
+        return res.status(429).json({ error: "Te veel pogingen. Probeer het over 15 minuten opnieuw." });
+    }
+    entry.count += 1;
+    authRateLimits.set(key, entry);
+    next();
+}
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const ADMIN_EMAIL = "lukevandendool2012@gmail.com";
@@ -203,7 +223,7 @@ app.get("/", (req, res) => {
 });
 
 // ACCOUNT REGISTREREN
-app.post("/register", async (req, res) => {
+app.post("/register", limitAuthAttempts, async (req, res) => {
     try {
         const { name, email, password } = req.body;
 
@@ -262,7 +282,7 @@ app.post("/register", async (req, res) => {
 });
 
 // INLOGGEN
-app.post("/login", async (req, res) => {
+app.post("/login", limitAuthAttempts, async (req, res) => {
     try {
         const { email, password } = req.body;
 
