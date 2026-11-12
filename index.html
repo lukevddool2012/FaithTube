@@ -58,6 +58,11 @@ button{cursor:pointer}
 .profile-button img{width:100%;height:100%;object-fit:cover}
 .mobile-logout-button{display:none;align-items:center;justify-content:center;gap:4px;border:1px solid rgba(190,178,255,.24);border-radius:9px;background:#252b50;color:#f2c66d;padding:7px 8px;font-size:11px;font-weight:700}
 .mobile-logout-button svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.mobile-logout-floating{display:none}
+@media(max-width:800px){
+ .mobile-logout-floating{display:flex;position:fixed;right:12px;bottom:84px;z-index:55;align-items:center;gap:8px;padding:11px 15px;border:1px solid rgba(255,145,145,.45);border-radius:999px;background:#6f304b;color:#fff;font-size:13px;font-weight:700;box-shadow:0 6px 22px rgba(0,0,0,.35)}
+ .mobile-logout-floating svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+}
 
 .gold-btn{background:var(--gold);color:var(--navy);border:0;border-radius:9px;padding:11px 16px;font-weight:bold}
 .gold-btn:hover,.primary-btn:hover{background:#f4d991}
@@ -439,6 +444,7 @@ body{
       </section>
     </main>
   </div>
+  <button type="button" class="mobile-logout-floating" onclick="logout()" aria-label="Uitloggen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H3M14 3h6a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1h-6"/></svg><span>Uitloggen</span></button>
   <div class="mobile-menu-backdrop" id="mobileMenuBackdrop" onclick="toggleMobileMenu(false)"></div>
   <nav class="mobile-bottom-nav" aria-label="Snelle navigatie">
     <button class="active" data-mobile-page="home" onclick="mobileNavigate('home',this)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7"/><path d="M5 9v12h14V9M9 21v-7h6v7"/></svg><span>Home</span></button>
