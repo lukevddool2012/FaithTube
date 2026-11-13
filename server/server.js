@@ -39,10 +39,6 @@ const ADMIN_EMAIL = "lukevandendool2012@gmail.com";
 const ADDITIONAL_ADMIN_EMAIL = "zilanzaal1504@gmail.com";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
-// Geef het bestaande FaithTube-account met dit e-mailadres beheerrechten.
-// De promotie gebeurt server-side, zodat de API-beveiliging dit ook afdwingt.
-db.prepare("UPDATE users SET role = 'admin', verified = 1 WHERE lower(email) = ?")
-    .run(ADDITIONAL_ADMIN_EMAIL);
 
 if (!JWT_SECRET || !ADMIN_PASSWORD) {
     console.error("JWT_SECRET of ADMIN_PASSWORD ontbreekt.");
@@ -173,6 +169,11 @@ if (!alreadyCleaned) {
     }
     console.log("Eenmalige opschoning uitgevoerd; admin-profiel is behouden.");
 }
+
+// Geef het bestaande FaithTube-account met dit e-mailadres beheerrechten.
+// De promotie gebeurt server-side, zodat de API-beveiliging dit ook afdwingt.
+db.prepare("UPDATE users SET role = 'admin', verified = 1 WHERE lower(email) = ?")
+    .run(ADDITIONAL_ADMIN_EMAIL);
 
 // Video uploads
 const storage = multer.diskStorage({
