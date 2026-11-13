@@ -170,21 +170,34 @@ if (!alreadyCleaned) {
     console.log("Eenmalige opschoning uitgevoerd; admin-profiel is behouden.");
 }
 
-// Maak het account van Zilan aan (of werk het bestaande account bij).
-// Alleen de bcrypt-hash staat in de broncode; het wachtwoord zelf niet.
-db.prepare(`
-    INSERT INTO users (name, email, password, role, verified)
-    VALUES (?, ?, ?, 'admin', 1)
-    ON CONFLICT(email) DO UPDATE SET
-        name = excluded.name,
-        password = excluded.password,
-        role = 'admin',
-        verified = 1
-`).run(
-    "Zilan Zaal",
-    ADDITIONAL_ADMIN_EMAIL,
-    "$2b$12$s6hDQr8f66XdRV8FgTC7U.OkSBi.faQVGyL09p8xklGLNyyKPGALO"
-);
+// Maak Zilan één keer beheerder en stel het startwachtwoord één keer in.
+// Daarna blijft een later gewijzigd wachtwoord behouden bij serverherstarts.
+const zilanBootstrap = db.prepare(
+    "SELECT setting_value FROM app_settings WHERE setting_key = ?"
+).get("zilan_admin_bootstrap_v1");
+
+if (!zilanBootstrap) {
+    db.prepare(`
+        INSERT INTO users (name, email, password, role, verified)
+        VALUES (?, ?, ?, 'admin', 1)
+        ON CONFLICT(email) DO UPDATE SET
+            name = excluded.name,
+            password = excluded.password,
+            role = 'admin',
+            verified = 1
+    `).run(
+        "Zilan Zaal",
+        ADDITIONAL_ADMIN_EMAIL,
+        "$2b$12$s6hDQr8f66XdRV8FgTC7U.OkSBi.faQVGyL09p8xklGLNyyKPGALO"
+    );
+    db.prepare(
+        "INSERT INTO app_settings (setting_key, setting_value) VALUES (?, ?)"
+    ).run("zilan_admin_bootstrap_v1", "done");
+} else {
+    db.prepare(
+        "UPDATE users SET name = ?, role = 'admin', verified = 1 WHERE lower(email) = ?"
+    ).run("Zilan Zaal", ADDITIONAL_ADMIN_EMAIL);
+}
 
 // Video uploads
 const storage = multer.diskStorage({
