@@ -9,7 +9,9 @@ const multer = require("multer");
 const webpush = require("web-push");
 const path = require("path");
 const fs = require("fs");
+const crypto = require("crypto");
 const db = require("./database");
+const dropbox = require("./dropbox");
 
 const app = express();
 app.set("trust proxy", 1);
@@ -117,6 +119,8 @@ db.exec(`CREATE TABLE IF NOT EXISTS push_subscriptions (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )`);
 ensureColumn("videos", "captions_url", "TEXT");
+ensureColumn("videos", "dropbox_video_path", "TEXT");
+ensureColumn("videos", "dropbox_thumbnail_path", "TEXT");
 
 // Meldingen van gebruikers over ongepaste inhoud.
 db.exec(`CREATE TABLE IF NOT EXISTS video_reports (
@@ -266,6 +270,84 @@ app.get("/", (req, res) => {
     res.send("Welkom bij de FaithTube-server!");
 });
 
+// Dropbox-koppeling: alleen beheerders mogen de koppeling starten.
+const dropboxOAuthStates = new Map();
+app.get("/dropbox/status", authenticate, adminOnly, (req, res) => {
+    res.json({
+        configured: dropbox.isConfigured(),
+        appReady: Boolean(process.env.DROPBOX_APP_KEY && process.env.DROPBOX_APP_SECRET && process.env.DROPBOX_REDIRECT_URI)
+    });
+});
+
+app.get("/dropbox/connect", authenticate, adminOnly, (req, res) => {
+    const appKey = process.env.DROPBOX_APP_KEY;
+    const redirectUri = process.env.DROPBOX_REDIRECT_URI;
+    if (!appKey || !process.env.DROPBOX_APP_SECRET || !redirectUri) {
+        return res.status(503).json({
+            error: "Vul eerst DROPBOX_APP_KEY, DROPBOX_APP_SECRET en DROPBOX_REDIRECT_URI in bij Render."
+        });
+    }
+
+    const state = crypto.randomBytes(32).toString("hex");
+    dropboxOAuthStates.set(state, {
+        email: req.user.email,
+        expiresAt: Date.now() + 10 * 60 * 1000
+    });
+
+    const authorizationUrl = new URL("https://www.dropbox.com/oauth2/authorize");
+    authorizationUrl.searchParams.set("client_id", appKey);
+    authorizationUrl.searchParams.set("response_type", "code");
+    authorizationUrl.searchParams.set("token_access_type", "offline");
+    authorizationUrl.searchParams.set("redirect_uri", redirectUri);
+    authorizationUrl.searchParams.set("state", state);
+    authorizationUrl.searchParams.set("scope", "files.content.read files.content.write files.metadata.read");
+
+    res.json({ authorizationUrl: authorizationUrl.toString() });
+});
+
+app.get("/dropbox/callback", async (req, res) => {
+    res.setHeader("Cache-Control", "no-store");
+    const state = typeof req.query.state === "string" ? req.query.state : "";
+    const stateData = dropboxOAuthStates.get(state);
+    dropboxOAuthStates.delete(state);
+
+    if (!stateData || Date.now() > stateData.expiresAt) {
+        return res.status(400).send("Deze Dropbox-koppeling is verlopen. Start de koppeling opnieuw vanuit het FaithTube-beheerdersdashboard.");
+    }
+    if (req.query.error) {
+        return res.status(400).send("Dropbox-toestemming is niet gegeven. Ga terug naar FaithTube en probeer het opnieuw.");
+    }
+
+    try {
+        const credentials = Buffer.from(
+            process.env.DROPBOX_APP_KEY + ":" + process.env.DROPBOX_APP_SECRET
+        ).toString("base64");
+        const tokenResponse = await fetch("https://api.dropbox.com/oauth2/token", {
+            method: "POST",
+            headers: {
+                Authorization: "Basic " + credentials,
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: new URLSearchParams({
+                code: String(req.query.code || ""),
+                grant_type: "authorization_code",
+                redirect_uri: process.env.DROPBOX_REDIRECT_URI
+            })
+        });
+        const tokenData = await tokenResponse.json().catch(() => ({}));
+        if (!tokenResponse.ok || !tokenData.refresh_token) {
+            console.error("Dropbox OAuth-uitwisseling mislukt:", tokenData.error_description || tokenData.error || tokenResponse.status);
+            return res.status(400).send("Dropbox kon de toestemming niet afronden. Controleer de App Key, App Secret en Redirect URI in Render en Dropbox.");
+        }
+
+        const safeToken = String(tokenData.refresh_token).replace(/[&<>"]/g, "");
+        return res.type("html").send(`<!doctype html><html lang="nl"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Dropbox koppelen</title><body style="font:16px Arial;max-width:680px;margin:40px auto;padding:20px;line-height:1.5"><h1>Dropbox is gemachtigd</h1><p>De Dropbox-toestemming voor FaithTube is gelukt. Nog één stap: kopieer deze geheime refresh token en voeg hem bij Render toe als omgevingsvariabele <b>DROPBOX_REFRESH_TOKEN</b>.</p><textarea id="token" readonly style="width:100%;height:90px;box-sizing:border-box">${safeToken}</textarea><p><button onclick="navigator.clipboard.writeText(document.getElementById('token').value)">Kopieer geheime token</button></p><p>Ga daarna naar Render → FaithTube-server → Environment, voeg de variabele toe en deploy opnieuw. Deel deze token met niemand en plak hem niet in GitHub of in een chat.</p></body></html>`);
+    } catch (error) {
+        console.error("Dropbox OAuth callback mislukt:", error);
+        return res.status(500).send("Dropbox koppelen is mislukt. Controleer de serverinstellingen en probeer het opnieuw.");
+    }
+});
+
 // ACCOUNT REGISTREREN
 app.post("/register", limitAuthAttempts, async (req, res) => {
     try {
@@ -397,12 +479,12 @@ app.post("/login", limitAuthAttempts, async (req, res) => {
 });
 
  // EIGEN ACCOUNT DEFINITIEF VERWIJDEREN
-app.delete("/account", authenticate, (req, res) => {
+app.delete("/account", authenticate, async (req, res) => {
     if (req.user.role === "admin" || req.user.id === "faithtube-main-admin") {
         return res.status(403).json({ error: "Het beheerdersaccount kan niet via deze functie worden verwijderd." });
     }
     const userId = Number(req.user.id);
-    const ownedVideos = db.prepare("SELECT video_url, thumbnail_url FROM videos WHERE user_id = ?").all(userId);
+    const ownedVideos = db.prepare("SELECT video_url, thumbnail_url, dropbox_video_path, dropbox_thumbnail_path FROM videos WHERE user_id = ?").all(userId);
     const removeAccount = db.transaction(() => {
         db.prepare("DELETE FROM comments WHERE user_id = ?").run(userId);
         db.prepare("DELETE FROM comments WHERE video_id IN (SELECT id FROM videos WHERE user_id = ?)").run(userId);
@@ -414,14 +496,7 @@ app.delete("/account", authenticate, (req, res) => {
     });
     try {
         removeAccount();
-        for (const video of ownedVideos) {
-            for (const mediaUrl of [video.video_url, video.thumbnail_url]) {
-                if (typeof mediaUrl === "string" && mediaUrl.startsWith("/uploads/")) {
-                    const filePath = path.join(uploadDir, path.basename(mediaUrl));
-                    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-                }
-            }
-        }
+        for (const video of ownedVideos) await deleteVideoMedia(video);
         res.json({ success: true, message: "Je account en de bijbehorende gegevens zijn definitief verwijderd." });
     } catch (error) {
         console.error("Account verwijderen mislukt:", error);
@@ -603,6 +678,14 @@ app.get("/me", authenticate, (req, res) => {
 
 // VIDEO OF BIJBELSTUDIE INSTUREN
 app.post("/videos", authenticate, upload.single("video"), async (req, res) => {
+    let uploadedDropboxVideoPath = "";
+    let uploadedDropboxThumbnailPath = "";
+    let localThumbnailPath = "";
+
+    const removeTemporaryVideo = () => {
+        if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+    };
+
     try {
         const {
             title,
@@ -622,80 +705,65 @@ app.post("/videos", authenticate, upload.single("video"), async (req, res) => {
                 if (!["http:", "https:"].includes(parsedLink.protocol)) throw new Error("Ongeldig protocol");
                 validVideoLink = parsedLink.href;
             } catch {
-                if (req.file) fs.unlinkSync(req.file.path);
+                removeTemporaryVideo();
                 return res.status(400).json({ error: "Vul een geldige videolink in die begint met https:// of http://." });
             }
         }
+
         const hasVideoSource = hasVideo || Boolean(validVideoLink);
         const allowed = ["Preek", "Worship", "Bijbelstudie"];
-
         if (
             typeof title !== "string" ||
             title.trim().length < 2 ||
             title.trim().length > 150 ||
             !allowed.includes(category)
         ) {
-            if (req.file) fs.unlinkSync(req.file.path);
-            return res.status(400).json({
-                error: "Vul een geldige titel en categorie in."
-            });
+            removeTemporaryVideo();
+            return res.status(400).json({ error: "Vul een geldige titel en categorie in." });
         }
 
         if (category === "Bijbelstudie") {
             if (typeof bibleReference !== "string" || !bibleReference.trim()) {
-                if (req.file) fs.unlinkSync(req.file.path);
+                removeTemporaryVideo();
                 return res.status(400).json({ error: "Vul de Bijbeltekst in." });
             }
-
             if (hasVideoSource && (typeof description !== "string" || !description.trim())) {
-                if (req.file) fs.unlinkSync(req.file.path);
-                return res.status(400).json({
-                    error: "Voeg een beschrijving toe bij je video."
-                });
+                removeTemporaryVideo();
+                return res.status(400).json({ error: "Voeg een beschrijving toe bij je video." });
             }
-
-            if (!hasVideoSource && (
-                typeof studyContent !== "string" ||
-                studyContent.trim().length < 30
-            )) {
-                return res.status(400).json({
-                    error: "Schrijf je volledige Bijbelstudie (minimaal 30 tekens)."
-                });
+            if (!hasVideoSource && (typeof studyContent !== "string" || studyContent.trim().length < 30)) {
+                return res.status(400).json({ error: "Schrijf je volledige Bijbelstudie (minimaal 30 tekens)." });
             }
         } else {
             if (!hasVideoSource) {
+                removeTemporaryVideo();
                 return res.status(400).json({ error: "Kies een videobestand of plak een geldige videolink." });
             }
-
             if (typeof description !== "string" || !description.trim()) {
-                if (req.file) fs.unlinkSync(req.file.path);
-                return res.status(400).json({
-                    error: "Vul een beschrijving bij de video in."
-                });
+                removeTemporaryVideo();
+                return res.status(400).json({ error: "Vul een beschrijving bij de video in." });
             }
         }
 
         if (req.user.role !== "admin" && !getUser(req.user.id)) {
-            if (req.file) fs.unlinkSync(req.file.path);
+            removeTemporaryVideo();
             return res.status(401).json({ error: "Account niet gevonden." });
         }
 
-        let thumbnailUrl = "";
+        let thumbnailBuffer = null;
+        let thumbnailExtension = "";
         if (typeof req.body.thumbnailData === "string" && req.body.thumbnailData) {
             const match = req.body.thumbnailData.match(/^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+/=]+)$/);
             if (!match) {
-                if (req.file) fs.unlinkSync(req.file.path);
+                removeTemporaryVideo();
                 return res.status(400).json({ error: "De thumbnail moet een JPG-, PNG- of WebP-afbeelding zijn." });
             }
-            const imageBuffer = Buffer.from(match[2], "base64");
-            if (!imageBuffer.length || imageBuffer.length > 3 * 1024 * 1024) {
-                if (req.file) fs.unlinkSync(req.file.path);
+            thumbnailBuffer = Buffer.from(match[2], "base64");
+            if (!thumbnailBuffer.length || thumbnailBuffer.length > 3 * 1024 * 1024) {
+                removeTemporaryVideo();
                 return res.status(400).json({ error: "De thumbnail mag maximaal 3 MB zijn." });
             }
-            const extension = match[1] === "jpeg" ? "jpg" : match[1];
-            const thumbnailFilename = `thumbnail-${Date.now()}-${require("crypto").randomUUID()}.${extension}`;
-            fs.writeFileSync(path.join(uploadDir, thumbnailFilename), imageBuffer);
-            thumbnailUrl = `/uploads/${thumbnailFilename}`;
+            thumbnailExtension = match[1] === "jpeg" ? "jpg" : match[1];
         }
 
         let validCaptionsUrl = null;
@@ -705,19 +773,46 @@ app.post("/videos", authenticate, upload.single("video"), async (req, res) => {
                 if (!["http:", "https:"].includes(parsed.protocol) || !parsed.pathname.toLowerCase().endsWith(".vtt")) throw new Error("invalid WebVTT URL");
                 validCaptionsUrl = parsed.href;
             } catch {
-                if (req.file) fs.unlinkSync(req.file.path);
+                removeTemporaryVideo();
                 return res.status(400).json({ error: "Gebruik een geldige link naar een ondertitelbestand dat eindigt op .vtt." });
             }
         }
-        const videoUrl = hasVideo ? `/uploads/${req.file.filename}` : validVideoLink;
+
+        const useDropbox = dropbox.isConfigured();
+        let videoUrl = validVideoLink;
+        let thumbnailUrl = "";
+
+        if (hasVideo) {
+            if (useDropbox) {
+                const extension = path.extname(req.file.originalname).toLowerCase() || ".mp4";
+                uploadedDropboxVideoPath = "/videos/" + Date.now() + "-" + crypto.randomUUID() + extension;
+                await dropbox.uploadFile(req.file.path, uploadedDropboxVideoPath);
+                removeTemporaryVideo();
+            } else {
+                videoUrl = "/uploads/" + req.file.filename;
+            }
+        }
+
+        if (thumbnailBuffer) {
+            if (useDropbox) {
+                uploadedDropboxThumbnailPath = "/thumbnails/" + Date.now() + "-" + crypto.randomUUID() + "." + thumbnailExtension;
+                await dropbox.uploadBuffer(thumbnailBuffer, uploadedDropboxThumbnailPath);
+            } else {
+                const thumbnailFilename = "thumbnail-" + Date.now() + "-" + crypto.randomUUID() + "." + thumbnailExtension;
+                localThumbnailPath = path.join(uploadDir, thumbnailFilename);
+                fs.writeFileSync(localThumbnailPath, thumbnailBuffer);
+                thumbnailUrl = "/uploads/" + thumbnailFilename;
+            }
+        }
 
         const result = db.prepare(`
             INSERT INTO videos
             (
                 title, description, category, video_url, thumbnail_url, captions_url,
-                user_id, approved, bible_reference, study_content
+                user_id, approved, bible_reference, study_content,
+                dropbox_video_path, dropbox_thumbnail_path
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)
         `).run(
             title.trim(),
             (description || "").trim(),
@@ -727,15 +822,24 @@ app.post("/videos", authenticate, upload.single("video"), async (req, res) => {
             validCaptionsUrl,
             req.user.role === "admin" ? null : req.user.id,
             category === "Bijbelstudie" ? bibleReference.trim() : null,
-            category === "Bijbelstudie" && !hasVideoSource ? studyContent.trim() : null
+            category === "Bijbelstudie" && !hasVideoSource ? studyContent.trim() : null,
+            uploadedDropboxVideoPath || null,
+            uploadedDropboxThumbnailPath || null
         );
+
+        const videoId = result.lastInsertRowid;
+        if (uploadedDropboxVideoPath || uploadedDropboxThumbnailPath) {
+            if (uploadedDropboxVideoPath) videoUrl = "/media/video/" + videoId;
+            if (uploadedDropboxThumbnailPath) thumbnailUrl = "/media/thumbnail/" + videoId;
+            db.prepare("UPDATE videos SET video_url = ?, thumbnail_url = ? WHERE id = ?")
+                .run(videoUrl, thumbnailUrl, videoId);
+        }
 
         const submitter = req.user.role === "admin" ? "Beheerder" : (getUser(req.user.id)?.name || "Een gebruiker");
         const adminMessage = submitter + " heeft een nieuwe " + category + " ingestuurd: " + title.trim();
         db.prepare("INSERT INTO admin_notifications (message, video_id) VALUES (?, ?)")
-            .run(adminMessage, result.lastInsertRowid);
+            .run(adminMessage, videoId);
 
-        // Stuur dezelfde melding ook als pushbericht naar apparaten van de beheerder.
         await sendPushToUser("faithtube-main-admin", {
             title: "Nieuwe video ingestuurd op FaithTube",
             body: adminMessage,
@@ -744,19 +848,55 @@ app.post("/videos", authenticate, upload.single("video"), async (req, res) => {
 
         res.status(201).json({
             message: "Je inzending wacht op goedkeuring.",
-            videoId: result.lastInsertRowid
+            videoId
         });
-
     } catch (error) {
-        console.error(error);
-
-        if (req.file && fs.existsSync(req.file.path)) {
-            fs.unlinkSync(req.file.path);
-        }
-
-        res.status(500).json({ error: "Je inzending is mislukt." });
+        console.error("Video upload mislukt:", error);
+        removeTemporaryVideo();
+        if (localThumbnailPath && fs.existsSync(localThumbnailPath)) fs.unlinkSync(localThumbnailPath);
+        if (uploadedDropboxVideoPath) await dropbox.deleteFile(uploadedDropboxVideoPath);
+        if (uploadedDropboxThumbnailPath) await dropbox.deleteFile(uploadedDropboxThumbnailPath);
+        res.status(500).json({ error: error.message || "Je inzending is mislukt." });
     }
 });
+
+// Video- en thumbnailbestanden uit Dropbox worden via tijdelijke Dropbox-links afgespeeld.
+app.get("/media/video/:id", async (req, res) => {
+    try {
+        const video = db.prepare("SELECT dropbox_video_path FROM videos WHERE id = ?").get(req.params.id);
+        if (!video || !video.dropbox_video_path) return res.status(404).send("Video niet gevonden.");
+        const link = await dropbox.getTemporaryLink(video.dropbox_video_path);
+        res.redirect(302, link);
+    } catch (error) {
+        console.error("Video uit Dropbox openen mislukt:", error);
+        res.status(502).send("De video kan momenteel niet uit Dropbox worden geladen.");
+    }
+});
+
+app.get("/media/thumbnail/:id", async (req, res) => {
+    try {
+        const video = db.prepare("SELECT dropbox_thumbnail_path FROM videos WHERE id = ?").get(req.params.id);
+        if (!video || !video.dropbox_thumbnail_path) return res.status(404).send("Thumbnail niet gevonden.");
+        const link = await dropbox.getTemporaryLink(video.dropbox_thumbnail_path);
+        res.redirect(302, link);
+    } catch (error) {
+        console.error("Thumbnail uit Dropbox openen mislukt:", error);
+        res.status(502).send("De thumbnail kan momenteel niet worden geladen.");
+    }
+});
+
+async function deleteVideoMedia(video) {
+    if (!video) return;
+    if (video.dropbox_video_path) await dropbox.deleteFile(video.dropbox_video_path);
+    if (video.dropbox_thumbnail_path) await dropbox.deleteFile(video.dropbox_thumbnail_path);
+
+    for (const mediaUrl of [video.video_url, video.thumbnail_url]) {
+        if (typeof mediaUrl === "string" && mediaUrl.startsWith("/uploads/")) {
+            const filePath = path.join(uploadDir, path.basename(mediaUrl));
+            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        }
+    }
+}
 
 // KANALEN MET GOEDGEKEURDE VIDEO'S
 app.get("/channels", authenticate, (req, res) => {
@@ -975,23 +1115,14 @@ app.post("/admin/videos/:id/approve", authenticate, adminOnly, async (req, res) 
 });
 
 // VIDEO AFWIJZEN
-app.delete("/admin/videos/:id", authenticate, adminOnly, (req, res) => {
+app.delete("/admin/videos/:id", authenticate, adminOnly, async (req, res) => {
     const video = db.prepare(
-        "SELECT video_url, thumbnail_url FROM videos WHERE id = ?"
+        "SELECT video_url, thumbnail_url, dropbox_video_path, dropbox_thumbnail_path FROM videos WHERE id = ?"
     ).get(req.params.id);
-
-    if (video) {
-        for (const mediaUrl of [video.video_url, video.thumbnail_url]) {
-            if (typeof mediaUrl === "string" && mediaUrl.startsWith("/uploads/")) {
-                const filename = path.basename(mediaUrl);
-                const filePath = path.join(uploadDir, filename);
-                if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-            }
-        }
-    }
 
     db.prepare("DELETE FROM comments WHERE video_id = ?").run(req.params.id);
     db.prepare("DELETE FROM videos WHERE id = ?").run(req.params.id);
+    await deleteVideoMedia(video);
 
     res.json({ success: true });
 });
