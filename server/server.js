@@ -170,10 +170,21 @@ if (!alreadyCleaned) {
     console.log("Eenmalige opschoning uitgevoerd; admin-profiel is behouden.");
 }
 
-// Geef het bestaande FaithTube-account met dit e-mailadres beheerrechten.
-// De promotie gebeurt server-side, zodat de API-beveiliging dit ook afdwingt.
-db.prepare("UPDATE users SET role = 'admin', verified = 1 WHERE lower(email) = ?")
-    .run(ADDITIONAL_ADMIN_EMAIL);
+// Maak het account van Zilan aan (of werk het bestaande account bij).
+// Alleen de bcrypt-hash staat in de broncode; het wachtwoord zelf niet.
+db.prepare(`
+    INSERT INTO users (name, email, password, role, verified)
+    VALUES (?, ?, ?, 'admin', 1)
+    ON CONFLICT(email) DO UPDATE SET
+        name = excluded.name,
+        password = excluded.password,
+        role = 'admin',
+        verified = 1
+`).run(
+    "Zilan Zaal",
+    ADDITIONAL_ADMIN_EMAIL,
+    "$2b$12$s6hDQr8f66XdRV8FgTC7U.OkSBi.faQVGyL09p8xklGLNyyKPGALO"
+);
 
 // Video uploads
 const storage = multer.diskStorage({
