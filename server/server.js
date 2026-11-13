@@ -36,7 +36,13 @@ function limitAuthAttempts(req, res, next) {
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const ADMIN_EMAIL = "lukevandendool2012@gmail.com";
+const ADDITIONAL_ADMIN_EMAIL = "zilanzaal1504@gmail.com";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+
+// Geef het bestaande FaithTube-account met dit e-mailadres beheerrechten.
+// De promotie gebeurt server-side, zodat de API-beveiliging dit ook afdwingt.
+db.prepare("UPDATE users SET role = 'admin', verified = 1 WHERE lower(email) = ?")
+    .run(ADDITIONAL_ADMIN_EMAIL);
 
 if (!JWT_SECRET || !ADMIN_PASSWORD) {
     console.error("JWT_SECRET of ADMIN_PASSWORD ontbreekt.");
@@ -226,10 +232,7 @@ function authenticate(req, res, next) {
 
 // Beheerderscontrole
 function adminOnly(req, res, next) {
-    if (
-        req.user.role !== "admin" ||
-        req.user.id !== "faithtube-main-admin"
-    ) {
+    if (req.user.role !== "admin") {
         return res.status(403).json({ error: "Geen beheerderstoegang." });
     }
 
@@ -360,7 +363,7 @@ app.post("/login", limitAuthAttempts, async (req, res) => {
             id: user.id,
             name: user.name,
             email: user.email,
-            role: "visitor",
+            role: user.role,
             verified: Boolean(user.verified)
         }, JWT_SECRET, { expiresIn: "30d" });
 
@@ -370,7 +373,7 @@ app.post("/login", limitAuthAttempts, async (req, res) => {
                 id: user.id,
                 name: user.name,
                 email: user.email,
-                role: "visitor",
+                role: user.role,
                 verified: Boolean(user.verified)
             }
         });
