@@ -438,6 +438,11 @@ body{
 <section id="page-admin" class="page">
         <div class="section"><h2 class="section-title">Meldingen van gebruikers</h2><div id="adminReports"></div></div>
         <h1 class="page-heading">⚙ Beheerdersdashboard</h1><p class="page-description">Beheer video's, accounts en reacties.</p>
+        <div class="panel" id="dropboxAdminPanel">
+          <h2>Dropbox-opslag</h2>
+          <p id="dropboxAdminStatus">Dropbox-status wordt gecontroleerd...</p>
+          <button type="button" class="gold-btn" onclick="connectFaithTubeDropbox()">Dropbox koppelen</button>
+        </div>
         <div class="section"><h2 class="section-title">⏳ Video's die wachten op goedkeuring</h2><div id="pendingVideos"></div></div>
         <div class="section"><h2 class="section-title">👥 Accounts beheren</h2><div id="adminUsers"></div></div>
         <div class="section"><h2 class="section-title">💬 Reacties beheren</h2><div id="adminComments"></div></div>
@@ -1752,8 +1757,36 @@ async function renderAdmin() {
     await loadAdminUsers();
     await loadAdminComments();
     await loadAdminReports();
+    await loadDropboxStatus();
   } catch (error) {
     toast("Beheerdersgegevens konden niet worden geladen: " + error.message);
+  }
+}
+
+async function loadDropboxStatus() {
+  const statusElement = document.getElementById("dropboxAdminStatus");
+  if (!statusElement) return;
+  try {
+    const status = await api("/dropbox/status");
+    if (status.configured) {
+      statusElement.textContent = "Dropbox is actief. Nieuwe video-uploads en thumbnails worden in Dropbox opgeslagen.";
+    } else if (status.appReady) {
+      statusElement.textContent = "De Dropbox-app is ingesteld op de server. Klik op 'Dropbox koppelen' om toestemming te geven.";
+    } else {
+      statusElement.textContent = "Dropbox moet nog worden ingesteld bij Render. Voeg eerst de App Key, App Secret en Redirect URI toe.";
+    }
+  } catch (error) {
+    statusElement.textContent = "Dropbox-status kon niet worden opgehaald: " + error.message;
+  }
+}
+
+async function connectFaithTubeDropbox() {
+  try {
+    const result = await api("/dropbox/connect");
+    if (!result.authorizationUrl) throw new Error("Dropbox gaf geen toestemmingslink terug.");
+    window.location.href = result.authorizationUrl;
+  } catch (error) {
+    toast(error.message || "Dropbox koppelen is mislukt.");
   }
 }
 
