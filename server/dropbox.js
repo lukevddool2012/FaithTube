@@ -67,7 +67,9 @@ async function apiJson(endpoint, args) {
     if (!response.ok) {
         const detail = data.error_summary || data.error_description || raw || response.status;
         console.error("Dropbox API-fout (" + endpoint + "):", detail);
-        throw new Error("Dropbox kon de bestandsbewerking niet uitvoeren.");
+        const error = new Error("Dropbox kon de bestandsbewerking niet uitvoeren.");
+        error.dropboxSummary = String(detail);
+        throw error;
     }
     return data;
 }
@@ -100,8 +102,8 @@ async function ensureFolder(folderPath) {
     try {
         await apiJson("files/create_folder_v2", { path: folderPath, autorename: false });
     } catch (error) {
-        // Dropbox geeft een conflict als de map al bestaat.
-        if (!String(error.message).includes("bestandsbewerking")) throw error;
+        // Alleen het verwachte conflict bij een al bestaande map negeren.
+        if (!String(error.dropboxSummary || "").includes("path/conflict/folder")) throw error;
     }
 }
 
