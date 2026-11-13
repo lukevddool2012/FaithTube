@@ -137,38 +137,14 @@ db.exec(`CREATE TABLE IF NOT EXISTS admin_profile (
     bio TEXT DEFAULT ""
 )`);
 
-// Eenmalige opschoning op verzoek. De marker voorkomt dat accounts bij elke herstart verdwijnen.
-db.exec(`CREATE TABLE IF NOT EXISTS app_settings (
-    setting_key TEXT PRIMARY KEY,
-    setting_value TEXT NOT NULL
-)`);
-const alreadyCleaned = db.prepare(
-    "SELECT setting_value FROM app_settings WHERE setting_key = ?"
-).get("initial_content_cleanup_v1");
-
-if (!alreadyCleaned) {
-    const clearOldContent = db.transaction(() => {
-        db.exec(`
-            DELETE FROM comments;
-            DELETE FROM video_reports;
-            DELETE FROM watch_history;
-            DELETE FROM notifications;
-            DELETE FROM follows;
-            DELETE FROM videos;
-            DELETE FROM users;
-        `);
-        db.prepare(
-            "INSERT INTO app_settings (setting_key, setting_value) VALUES (?, ?)"
-        ).run("initial_content_cleanup_v1", "done");
-    });
-    clearOldContent();
-
-    for (const file of fs.readdirSync(uploadDir)) {
-        const filePath = path.join(uploadDir, file);
-        if (fs.statSync(filePath).isFile()) fs.unlinkSync(filePath);
-    }
-    console.log("Eenmalige opschoning uitgevoerd; admin-profiel is behouden.");
-}
+// App-instellingen worden bewaard voor migraties en eenmalige accountinstellingen.
+// BELANGRIJK: serverstart mag nooit bestaande gebruikers, video's of uploads wissen.
+db.exec(`
+    CREATE TABLE IF NOT EXISTS app_settings (
+        setting_key TEXT PRIMARY KEY,
+        setting_value TEXT NOT NULL
+    )
+`);
 
 // Houd Zilans account beheerder. Stel het wachtwoord alleen in via Render.
 (async () => {
@@ -297,8 +273,7 @@ app.post("/register", limitAuthAttempts, async (req, res) => {
 
         if (
             typeof name !== "string" ||
-            typeof email !== "string" ||
-            typeof password !== "string" ||
+            typeof email !== "string" ||            typeof password !== "string" ||
             name.trim().length < 2 ||
             name.trim().length > 60 ||
             !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) ||
@@ -597,8 +572,7 @@ app.put("/profile", authenticate, (req, res) => {
     `).get(req.user.id);
 
     res.json({
-        message: "Je profiel is opgeslagen!",
-        user
+        message: "Je profiel is opgeslagen!",        user
     });
 });
 // EIGEN ACCOUNT BEKIJKEN
@@ -897,7 +871,6 @@ app.post("/videos/:id/view", authenticate, (req, res) => {
                 watched_at = CURRENT_TIMESTAMP
         `).run(req.user.id, video.id);
     }
-
     res.json({ success: true });
 });
 
