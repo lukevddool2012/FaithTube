@@ -170,34 +170,46 @@ if (!alreadyCleaned) {
     console.log("Eenmalige opschoning uitgevoerd; admin-profiel is behouden.");
 }
 
-// Maak Zilan één keer beheerder en stel het startwachtwoord één keer in.
-// Daarna blijft een later gewijzigd wachtwoord behouden bij serverherstarts.
-const zilanBootstrap = db.prepare(
-    "SELECT setting_value FROM app_settings WHERE setting_key = ?"
-).get("zilan_admin_bootstrap_v1");
+// Houd Zilans account beheerder. Stel het wachtwoord alleen in via Render.
+(async () => {
+    const configuredPassword = process.env.ZILAN_ADMIN_PASSWORD;
+    if (configuredPassword) {
+        if (configuredPassword.length < 8 || configuredPassword.length > 72) {
+            throw new Error("ZILAN_ADMIN_PASSWORD moet 8 tot 72 tekens bevatten.");
+        }
+        const passwordReset = db.prepare(
+            "SELECT setting_value FROM app_settings WHERE setting_key = ?"
+        ).get("zilan_admin_password_reset_v2");
 
-if (!zilanBootstrap) {
-    db.prepare(`
-        INSERT INTO users (name, email, password, role, verified)
-        VALUES (?, ?, ?, 'admin', 1)
-        ON CONFLICT(email) DO UPDATE SET
-            name = excluded.name,
-            password = excluded.password,
-            role = 'admin',
-            verified = 1
-    `).run(
-        "Zilan Zaal",
-        ADDITIONAL_ADMIN_EMAIL,
-        "$2b$12$s6hDQr8f66XdRV8FgTC7U.OkSBi.faQVGyL09p8xklGLNyyKPGALO"
-    );
-    db.prepare(
-        "INSERT INTO app_settings (setting_key, setting_value) VALUES (?, ?)"
-    ).run("zilan_admin_bootstrap_v1", "done");
-} else {
+        if (!passwordReset) {
+            const passwordHash = await bcrypt.hash(configuredPassword, 12);
+            const existing = db.prepare(
+                "SELECT id FROM users WHERE lower(email) = ?"
+            ).get(ADDITIONAL_ADMIN_EMAIL);
+
+            if (existing) {
+                db.prepare(
+                    "UPDATE users SET name = ?, password = ?, role = 'admin', verified = 1 WHERE id = ?"
+                ).run("Zilan Zaal", passwordHash, existing.id);
+            } else {
+                db.prepare(
+                    "INSERT INTO users (name, email, password, role, verified) VALUES (?, ?, ?, 'admin', 1)"
+                ).run("Zilan Zaal", ADDITIONAL_ADMIN_EMAIL, passwordHash);
+            }
+
+            db.prepare(
+                "INSERT INTO app_settings (setting_key, setting_value) VALUES (?, ?)"
+            ).run("zilan_admin_password_reset_v2", "done");
+        }
+    }
+
     db.prepare(
         "UPDATE users SET name = ?, role = 'admin', verified = 1 WHERE lower(email) = ?"
     ).run("Zilan Zaal", ADDITIONAL_ADMIN_EMAIL);
-}
+})().catch(error => {
+    console.error("Zilans beheerdersaccount instellen is mislukt:", error);
+    process.exit(1);
+});
 
 // Video uploads
 const storage = multer.diskStorage({
