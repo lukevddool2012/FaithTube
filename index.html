@@ -184,7 +184,9 @@ button{cursor:pointer}
 .mobile-bottom-nav button.active,.mobile-bottom-nav button:focus-visible{color:var(--gold)}
 .mobile-bottom-nav svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .mobile-menu-backdrop{display:none;position:fixed;inset:60px 0 0;background:#0008;z-index:30;touch-action:none;overscroll-behavior:contain}
-body.mobile-menu-open{overflow:hidden;overscroll-behavior:none;touch-action:none}
+body.mobile-menu-open{overflow:hidden;overscroll-behavior:none;touch-action:auto}
+body.mobile-menu-open .sidebar{touch-action:pan-y;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
+body.mobile-menu-open .mobile-menu-backdrop{touch-action:none}
 
 
 /* FaithTube kleurrijkere Royal Edition */
