@@ -1,4 +1,4 @@
-const CACHE_NAME = "faithtube-shell-v6";
+const CACHE_NAME = "faithtube-shell-v7";
 const APP_SHELL = ["/", "/manifest.json", "/icon-192.png", "/icon-512.png", "/icon.svg"];
 
 self.addEventListener("install", event => {
