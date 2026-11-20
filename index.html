@@ -732,6 +732,19 @@ async function startApp() {
     loadVideos();
     loadPersonalData();
     loadNotifications();
+
+    // Houd meldingen ook tijdens het gebruik actueel, zonder de app te herladen.
+    if (!window.faithTubeNotificationTimer) {
+      window.faithTubeNotificationTimer = window.setInterval(() => {
+        if (token && currentUser) loadNotifications();
+      }, 30000);
+    }
+    if (!window.faithTubeNotificationVisibilityHandler) {
+      window.faithTubeNotificationVisibilityHandler = () => {
+        if (!document.hidden && token && currentUser) loadNotifications();
+      };
+      document.addEventListener("visibilitychange", window.faithTubeNotificationVisibilityHandler);
+    }
   } catch (error) {
     logout();
     toast("Log opnieuw in om verder te gaan.");
@@ -1808,6 +1821,18 @@ async function loadNotifications() {
     if (badge) {
       badge.textContent = unreadCount;
       badge.classList.toggle("hidden", unreadCount === 0);
+    }
+
+    // Synchroniseer het app-icoon met het aantal ongelezen meldingen.
+    // Niet elke browser/launcher ondersteunt badges; in-app meldingen blijven werken.
+    try {
+      if (navigator.setAppBadge && unreadCount > 0) {
+        await navigator.setAppBadge(unreadCount);
+      } else if (navigator.clearAppBadge) {
+        await navigator.clearAppBadge();
+      }
+    } catch (error) {
+      console.warn("App-badge kon niet worden bijgewerkt:", error);
     }
 
     // Haal de echte wachtrij apart op. Zo blijven de actieknoppen zichtbaar,
