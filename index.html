@@ -440,7 +440,7 @@ body{
         <div id="playlistList"></div>
       </section>
 
-      <section id="page-notifications" class="page"><h1 class="page-heading">♢ Meldingen</h1><p class="page-description">Bekijk je FaithTube-meldingen.</p><div class="panel"><h2>Pushmeldingen</h2><p class="page-description">Ontvang een melding wanneer je video is goedgekeurd.</p><button class="gold-btn" type="button" onclick="enablePushNotifications()">Pushmeldingen inschakelen</button></div><div id="notificationList"></div></section>
+      <section id="page-notifications" class="page"><h1 class="page-heading">♢ Meldingen</h1><p class="page-description">Bekijk je FaithTube-meldingen.</p><div class="panel"><h2>Pushmeldingen</h2><p class="page-description">FaithTube stelt meldingen automatisch in zodra je telefoon toestemming heeft gegeven.</p><p id="pushSettingsStatus" class="page-description" aria-live="polite">Meldingsinstellingen controleren...</p><button id="pushSettingsButton" class="gold-btn" type="button" onclick="enablePushNotifications()">Meldingen toestaan</button></div><div id="notificationList"></div></section>
 
       <section id="page-upload" class="page">
         <h1 class="page-heading">＋ Video uploaden</h1><p class="page-description">Deel een preek, worship of Bijbelstudie. Een beheerder moet je inzending eerst goedkeuren.</p>
@@ -732,6 +732,7 @@ async function startApp() {
     loadVideos();
     loadPersonalData();
     loadNotifications();
+    setupPushNotificationsAutomatically();
 
     // Houd meldingen ook tijdens het gebruik actueel, zonder de app te herladen.
     if (!window.faithTubeNotificationTimer) {
@@ -1770,42 +1771,71 @@ function base64UrlToUint8Array(value) {
   return Uint8Array.from([...raw].map(char => char.charCodeAt(0)));
 }
 
+async function setupPushNotificationsAutomatically() {
+  if (!window.isSecureContext || !("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+    updatePushSettingsStatus("Deze browser ondersteunt geen pushmeldingen.", false);
+    return;
+  }
+  if (Notification.permission === "denied") {
+    updatePushSettingsStatus("Meldingen zijn geblokkeerd in je telefoon- of browserinstellingen. Zet ze daar aan voor FaithTube.", false);
+    return;
+  }
+  if (Notification.permission !== "granted") {
+    updatePushSettingsStatus("Tik één keer op ‘Meldingen toestaan’. Je telefoon vraagt daarna om toestemming.", true);
+    return;
+  }
+  try {
+    await savePushSubscription(false);
+    updatePushSettingsStatus("Pushmeldingen staan aan en zijn automatisch gekoppeld aan dit account.", false);
+  } catch (error) {
+    updatePushSettingsStatus("Automatisch koppelen is niet gelukt. Tik op de knop om het opnieuw te proberen.", true);
+  }
+}
+
+function updatePushSettingsStatus(message, showButton) {
+  const status = document.getElementById("pushSettingsStatus");
+  const button = document.getElementById("pushSettingsButton");
+  if (status) status.textContent = message;
+  if (button) button.classList.toggle("hidden", !showButton);
+}
+
+async function savePushSubscription(sendTest = false) {
+  const config = await api("/push/public-key");
+  if (!config.enabled || !config.publicKey) throw new Error("Pushmeldingen zijn nog niet ingesteld op de FaithTube-server.");
+  const registration = await navigator.serviceWorker.ready;
+  let subscription = await registration.pushManager.getSubscription();
+  if (!subscription) {
+    subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: base64UrlToUint8Array(config.publicKey)
+    });
+  }
+  await api("/push/subscribe", {
+    method: "POST",
+    body: JSON.stringify({ subscription: subscription.toJSON() })
+  });
+  if (sendTest) await api("/push/test", { method: "POST", body: JSON.stringify({}) });
+}
+
 async function enablePushNotifications() {
   if (!window.isSecureContext || !("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
     toast("Pushmeldingen werken alleen in een ondersteunde browser via een beveiligde verbinding.");
     return;
   }
   try {
-    // Vraag toestemming direct vanuit de tik op de knop; browsers vereisen dit gebruikersmoment.
     let permission = Notification.permission;
     if (permission === "default") permission = await Notification.requestPermission();
     if (permission !== "granted") {
-      toast(permission === "denied"
+      updatePushSettingsStatus(permission === "denied"
         ? "Meldingen zijn geblokkeerd. Zet meldingen voor FaithTube aan in de telefooninstellingen."
-        : "Je hebt geen toestemming gegeven voor meldingen.");
+        : "Je hebt nog geen toestemming gegeven.", true);
       return;
     }
-    const config = await api("/push/public-key");
-    if (!config.enabled || !config.publicKey) {
-      toast("Pushmeldingen zijn nog niet ingesteld op de FaithTube-server.");
-      return;
-    }
-    const registration = await navigator.serviceWorker.ready;
-    let subscription = await registration.pushManager.getSubscription();
-    if (!subscription) {
-      subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: base64UrlToUint8Array(config.publicKey)
-      });
-    }
-    await api("/push/subscribe", {
-      method: "POST",
-      body: JSON.stringify({ subscription: subscription.toJSON() })
-    });
-    // Stuur meteen een echte server-push zodat je kunt controleren dat alles werkt.
-    await api("/push/test", { method: "POST", body: JSON.stringify({}) });
-    toast("Pushmeldingen zijn ingeschakeld. Er is een testmelding verstuurd!");
+    await savePushSubscription(true);
+    updatePushSettingsStatus("Pushmeldingen staan aan en zijn gekoppeld aan dit account.", false);
+    toast("Pushmeldingen zijn ingeschakeld!");
   } catch (error) {
+    updatePushSettingsStatus(error.message || "Pushmeldingen instellen is mislukt.", true);
     toast(error.message || "Pushmeldingen instellen is mislukt.");
   }
 }
