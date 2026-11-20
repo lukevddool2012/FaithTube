@@ -1,4 +1,4 @@
-const CACHE_NAME = "faithtube-shell-v12";
+const CACHE_NAME = "faithtube-shell-v13";
 const APP_SHELL = ["/", "/manifest.json", "/icon-192.png", "/icon-512.png", "/icon.svg"];
 
 self.addEventListener("install", event => {
@@ -50,14 +50,30 @@ self.addEventListener("fetch", event => {
 self.addEventListener("push", event => {
   let data = {};
   try { data = event.data ? event.data.json() : {}; } catch { data = { body: event.data ? event.data.text() : "" }; }
-  event.waitUntil(self.registration.showNotification(data.title || "FaithTube", {
-    body: data.body || "Er is een nieuwe melding op FaithTube.",
-    icon: "/icon-192.png", badge: "/icon-192.png", data: { url: data.url || "/" }
-  }));
+  event.waitUntil((async () => {
+    // Toon ook een cijferbadge op ondersteunde telefoons/PWA-installaties.
+    try {
+      if (self.registration.setAppBadge) await self.registration.setAppBadge(1);
+    } catch (error) {
+      // Niet elk apparaat of elke browser ondersteunt app-badges.
+    }
+    await self.registration.showNotification(data.title || "FaithTube", {
+      body: data.body || "Er is een nieuwe melding op FaithTube.",
+      icon: "/icon-192.png", badge: "/icon-192.png", data: { url: data.url || "/" }
+    });
+  })());
 });
 
 self.addEventListener("notificationclick", event => {
   event.notification.close();
+  // De badge wordt gewist wanneer de gebruiker de pushmelding opent.
+  event.waitUntil((async () => {
+    try {
+      if (self.registration.clearAppBadge) await self.registration.clearAppBadge();
+    } catch (error) {
+      // App-badges zijn niet op alle platformen beschikbaar.
+    }
+  })());
   const target = new URL(event.notification.data?.url || "/", self.location.origin).href;
   event.waitUntil(clients.matchAll({ type: "window", includeUncontrolled: true }).then(list => {
     for (const client of list) if (client.url.startsWith(self.location.origin) && "focus" in client) return client.focus();
