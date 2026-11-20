@@ -247,10 +247,12 @@ async function createUserNotification(userId, message, payload = {}) {
     });
 }
 
-// Stuur beheerdersmeldingen naar de echte account-ID's van alle beheerders.
+// Stuur beheerdersmeldingen naar alle beheerders, inclusief het aparte hoofdaccount.
 async function sendPushToAdmins(payload) {
     const admins = db.prepare("SELECT id FROM users WHERE role = 'admin'").all();
-    const results = await Promise.all(admins.map(admin => sendPushToUser(admin.id, payload)));
+    const adminIds = new Set(admins.map(admin => String(admin.id)));
+    adminIds.add("faithtube-main-admin");
+    const results = await Promise.all([...adminIds].map(adminId => sendPushToUser(adminId, payload)));
     return results.reduce((total, result) => ({
         sent: total.sent + result.sent,
         failed: total.failed + result.failed
