@@ -125,7 +125,7 @@ button{cursor:pointer}
  .mobile-logout-button{display:flex}
  .topbar{padding:0 14px}
  .topbar .logo{font-size:20px}
- .sidebar{width:270px;max-width:82vw;top:60px;bottom:76px;left:0;z-index:35;padding:16px 12px;transform:translateX(-110%);transition:transform .24s ease;box-shadow:16px 0 40px #0008}
+ .sidebar{width:270px;max-width:82vw;top:60px;bottom:0;left:0;z-index:35;padding:16px 12px calc(96px + env(safe-area-inset-bottom));overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;transform:translateX(-110%);transition:transform .24s ease;box-shadow:16px 0 40px #0008}
  .sidebar.mobile-open{transform:translateX(0)}
  .nav-item{justify-content:flex-start;padding:12px 14px;gap:14px;font-size:14px}
  .nav-item span:last-child,.nav-label{display:initial}
@@ -183,7 +183,8 @@ button{cursor:pointer}
 
 .mobile-bottom-nav button.active,.mobile-bottom-nav button:focus-visible{color:var(--gold)}
 .mobile-bottom-nav svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.mobile-menu-backdrop{display:none;position:fixed;inset:60px 0 76px;background:#0008;z-index:30}
+.mobile-menu-backdrop{display:none;position:fixed;inset:60px 0 0;background:#0008;z-index:30;touch-action:none;overscroll-behavior:contain}
+body.mobile-menu-open{overflow:hidden;overscroll-behavior:none;touch-action:none}
 
 
 /* FaithTube kleurrijkere Royal Edition */
@@ -706,6 +707,7 @@ function toggleMobileMenu(force) {
   const open = typeof force === "boolean" ? force : !sidebar.classList.contains("mobile-open");
   sidebar.classList.toggle("mobile-open", open);
   backdrop.classList.toggle("visible", open);
+  document.body.classList.toggle("mobile-menu-open", open);
 }
 function mobileNavigate(page, button) {
   showPage(page);
