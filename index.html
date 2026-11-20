@@ -1758,18 +1758,43 @@ function base64UrlToUint8Array(value) {
 }
 
 async function enablePushNotifications() {
-  if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) { toast("Deze browser ondersteunt geen pushmeldingen."); return; }
+  if (!window.isSecureContext || !("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+    toast("Pushmeldingen werken alleen in een ondersteunde browser via een beveiligde verbinding.");
+    return;
+  }
   try {
+    // Vraag toestemming direct vanuit de tik op de knop; browsers vereisen dit gebruikersmoment.
+    let permission = Notification.permission;
+    if (permission === "default") permission = await Notification.requestPermission();
+    if (permission !== "granted") {
+      toast(permission === "denied"
+        ? "Meldingen zijn geblokkeerd. Zet meldingen voor FaithTube aan in de telefooninstellingen."
+        : "Je hebt geen toestemming gegeven voor meldingen.");
+      return;
+    }
     const config = await api("/push/public-key");
-    if (!config.enabled || !config.publicKey) { toast("Pushmeldingen moeten nog door de beheerder worden ingesteld."); return; }
-    const permission = await Notification.requestPermission();
-    if (permission !== "granted") { toast("Je hebt geen toestemming gegeven voor meldingen."); return; }
+    if (!config.enabled || !config.publicKey) {
+      toast("Pushmeldingen zijn nog niet ingesteld op de FaithTube-server.");
+      return;
+    }
     const registration = await navigator.serviceWorker.ready;
     let subscription = await registration.pushManager.getSubscription();
-    if (!subscription) subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: base64UrlToUint8Array(config.publicKey) });
-    await api("/push/subscribe", { method: "POST", body: JSON.stringify({ subscription: subscription.toJSON() }) });
-    toast("Pushmeldingen zijn ingeschakeld!");
-  } catch (error) { toast(error.message || "Pushmeldingen instellen is mislukt."); }
+    if (!subscription) {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: base64UrlToUint8Array(config.publicKey)
+      });
+    }
+    await api("/push/subscribe", {
+      method: "POST",
+      body: JSON.stringify({ subscription: subscription.toJSON() })
+    });
+    // Stuur meteen een echte server-push zodat je kunt controleren dat alles werkt.
+    await api("/push/test", { method: "POST", body: JSON.stringify({}) });
+    toast("Pushmeldingen zijn ingeschakeld. Er is een testmelding verstuurd!");
+  } catch (error) {
+    toast(error.message || "Pushmeldingen instellen is mislukt.");
+  }
 }
 
 async function loadNotifications() {
