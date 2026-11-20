@@ -237,6 +237,26 @@ async function sendPushToUser(userId, payload) {
     return { sent, failed };
 }
 
+// Maak altijd eerst een melding in FaithTube en stuur daarna dezelfde melding als push.
+async function createUserNotification(userId, message, payload = {}) {
+    db.prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)").run(userId, message);
+    return sendPushToUser(userId, {
+        title: payload.title || "Nieuwe melding op FaithTube",
+        body: payload.body || message,
+        url: payload.url || "/"
+    });
+}
+
+// Stuur beheerdersmeldingen naar de echte account-ID's van alle beheerders.
+async function sendPushToAdmins(payload) {
+    const admins = db.prepare("SELECT id FROM users WHERE role = 'admin'").all();
+    const results = await Promise.all(admins.map(admin => sendPushToUser(admin.id, payload)));
+    return results.reduce((total, result) => ({
+        sent: total.sent + result.sent,
+        failed: total.failed + result.failed
+    }), { sent: 0, failed: 0 });
+}
+
 // Inlogcontrole
 function authenticate(req, res, next) {
     const header = req.headers.authorization;
@@ -849,7 +869,7 @@ app.post("/videos", authenticate, upload.single("video"), async (req, res) => {
         db.prepare("INSERT INTO admin_notifications (message, video_id) VALUES (?, ?)")
             .run(adminMessage, videoId);
 
-        await sendPushToUser("faithtube-main-admin", {
+        await sendPushToAdmins({
             title: "Nieuwe video ingestuurd op FaithTube",
             body: adminMessage,
             url: "/"
@@ -1129,10 +1149,29 @@ app.post("/admin/videos/:id/approve", authenticate, adminOnly, async (req, res) 
     const video = db.prepare("SELECT id, title, user_id FROM videos WHERE id = ?").get(req.params.id);
     if (!video) return res.status(404).json({ error: "Video niet gevonden." });
     const result = db.prepare("UPDATE videos SET approved = 1 WHERE id = ?").run(req.params.id);
-    if (video.user_id) {
+    if (result.changes && video.user_id) {
+        const author = getUser(video.user_id);
         const message = "Je video " + video.title + " is goedgekeurd en staat nu op FaithTube.";
-        db.prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)").run(video.user_id, message);
-        await sendPushToUser(video.user_id, { title: "Je video staat op FaithTube!", body: video.title, url: "/" });
+        await createUserNotification(video.user_id, message, {
+            title: "Je video staat op FaithTube!",
+            body: video.title,
+            url: "/"
+        });
+
+        // Iedereen die dit kanaal volgt krijgt bericht zodra de video openbaar is.
+        if (author) {
+            const followers = db.prepare(
+                "SELECT follower_id FROM follows WHERE followed_id = ? AND follower_id != ?"
+            ).all(video.user_id, video.user_id);
+            const followerMessage = author.name + " heeft een nieuwe video geplaatst: " + video.title;
+            await Promise.all(followers.map(follower =>
+                createUserNotification(follower.follower_id, followerMessage, {
+                    title: "Nieuwe video van " + author.name,
+                    body: video.title,
+                    url: "/"
+                })
+            ));
+        }
     }
     res.json({ success: result.changes > 0 });
 });
