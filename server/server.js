@@ -1230,7 +1230,7 @@ app.post("/admin/admins", authenticate, mainAdminOnly, async (req, res) => {
     const password = typeof req.body.password === "string" ? req.body.password : "";
 
     if (name.length < 2 || name.length > 60 ||
-        !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) ||
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
         password.length < 8 || password.length > 72) {
         return res.status(400).json({ error: "Vul een naam, geldig e-mailadres en wachtwoord van 8 tot 72 tekens in." });
     }
