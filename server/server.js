@@ -133,13 +133,27 @@ db.exec(`CREATE TABLE IF NOT EXISTS video_reports (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )`);
 
-// Bewaar profielgegevens van het aparte beheerdersaccount.
-db.exec(`CREATE TABLE IF NOT EXISTS admin_profile (
-    id INTEGER PRIMARY KEY CHECK (id = 1),
+// Bewaar profielgegevens per beheerders-e-mailadres, zodat elke beheerder
+// zijn eigen naam en profiel blijvend behoudt op al zijn apparaten.
+db.exec(`CREATE TABLE IF NOT EXISTS admin_profiles (
+    email TEXT PRIMARY KEY COLLATE NOCASE,
     name TEXT NOT NULL,
     profile_image TEXT DEFAULT "",
-    bio TEXT DEFAULT ""
+    bio TEXT DEFAULT "",
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )`);
+
+// Neem het oude hoofdbeheerderprofiel eenmalig mee naar het e-mailadres
+// van het hoofdaccount. Het oude profiel wordt niet verwijderd.
+const legacyAdminProfile = db.prepare(
+    "SELECT name, profile_image, bio FROM admin_profile WHERE id = 1"
+).get();
+if (legacyAdminProfile && ADMIN_EMAIL) {
+    db.prepare(`
+        INSERT OR IGNORE INTO admin_profiles (email, name, profile_image, bio)
+        VALUES (?, ?, ?, ?)
+    `).run(ADMIN_EMAIL.toLowerCase(), legacyAdminProfile.name, legacyAdminProfile.profile_image || "", legacyAdminProfile.bio || "");
+}
 
 // App-instellingen worden bewaard voor migraties en eenmalige accountinstellingen.
 // BELANGRIJK: serverstart mag nooit bestaande gebruikers, video's of uploads wissen.
@@ -183,9 +197,11 @@ db.exec(`
         }
     }
 
+    // Laat bestaande profielnamen intact. De beheerdersrol blijft behouden
+    // zonder de door de gebruiker gekozen naam bij iedere serverstart te overschrijven.
     db.prepare(
-        "UPDATE users SET name = ?, role = 'admin', verified = 1 WHERE lower(email) = ?"
-    ).run("Zilan Zaal", ADDITIONAL_ADMIN_EMAIL);
+        "UPDATE users SET role = 'admin', verified = 1 WHERE lower(email) = ?"
+    ).run(ADDITIONAL_ADMIN_EMAIL);
 })().catch(error => {
     console.error("Zilans beheerdersaccount instellen is mislukt:", error);
     process.exit(1);
@@ -539,8 +555,8 @@ app.delete("/account", authenticate, async (req, res) => {
 app.get("/profile/:id", authenticate, (req, res) => {
     if (req.user.role === "admin" && req.params.id === req.user.id) {
         const saved = db.prepare(
-            "SELECT name, profile_image, bio FROM admin_profile WHERE id = 1"
-        ).get() || {};
+            "SELECT name, profile_image, bio FROM admin_profiles WHERE email = ?"
+        ).get(String(req.user.email || "").toLowerCase()) || {};
 
         return res.json({
             user: {
@@ -602,14 +618,19 @@ app.put("/profile", authenticate, (req, res) => {
     }
 
     if (req.user.role === "admin") {
+        const adminEmail = String(req.user.email || "").trim().toLowerCase();
+        if (!adminEmail) {
+            return res.status(400).json({ error: "Het e-mailadres van dit beheerdersaccount ontbreekt." });
+        }
         db.prepare(`
-            INSERT INTO admin_profile (id, name, profile_image, bio)
-            VALUES (1, ?, ?, ?)
-            ON CONFLICT(id) DO UPDATE SET
+            INSERT INTO admin_profiles (email, name, profile_image, bio, updated_at)
+            VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(email) DO UPDATE SET
                 name = excluded.name,
                 profile_image = excluded.profile_image,
-                bio = excluded.bio
-        `).run(name.trim(), profileImage || "", bio || "");
+                bio = excluded.bio,
+                updated_at = CURRENT_TIMESTAMP
+        `).run(adminEmail, name.trim(), profileImage || "", bio || "");
 
         return res.json({
             message: "Je beheerderprofiel is opgeslagen!",
@@ -685,8 +706,8 @@ app.put("/profile", authenticate, (req, res) => {
 app.get("/me", authenticate, (req, res) => {
     if (req.user.role === "admin") {
         const saved = db.prepare(
-            "SELECT name, profile_image, bio FROM admin_profile WHERE id = 1"
-        ).get() || {};
+            "SELECT name, profile_image, bio FROM admin_profiles WHERE email = ?"
+        ).get(String(req.user.email || "").toLowerCase()) || {};
 
         return res.json({
             user: {
