@@ -418,7 +418,7 @@ body{
         <div class="section"><h2 class="section-title">🔥 Populaire video's</h2><div id="popularVideos" class="video-grid"><div class="empty-state">Video's laden...</div></div></div>
         <div class="section"><h2 class="section-title">✨ Nieuw op FaithTube</h2><div id="newVideos" class="video-grid"><div class="empty-state">Video's laden...</div></div></div>
         <div class="section"><h2 class="section-title">✦ Aanbevolen voor jou</h2><div id="recommendedVideos" class="video-grid"></div></div>
-        <div class="panel"><h2>📖 Bijbelgedachte van vandaag</h2><p><strong class="gold">Psalm 23:1</strong></p><p>De HEER is mijn herder, het ontbreekt mij aan niets.</p></div>
+        <div class="panel" id="dailyBibleVerse"><h2>📖 Bijbeltekst van vandaag</h2><p>De Bijbeltekst wordt geladen...</p></div>
       </section>
 
       <section id="page-videos" class="page"><h1 class="page-heading">Alle video's</h1><p class="page-description">Ontdek alle goedgekeurde video's op FaithTube.</p><div id="allVideos" class="video-grid"></div></section>
@@ -721,6 +721,9 @@ async function startApp() {
 
     // Toon de startpagina direct; laad video's en persoonlijke gegevens daarna.
     showPage("home");
+    renderDailyBibleVerse();
+    if (!window.faithTubeDailyVerseTimer) window.faithTubeDailyVerseTimer = window.setInterval(renderDailyBibleVerse, 60000);
+    document.addEventListener("visibilitychange", renderDailyBibleVerse);
     loadVideos();
     loadPersonalData();
     loadNotifications();
@@ -749,6 +752,34 @@ function updateProfileButton() {
   } else {
     button.textContent = (currentUser.name || "FT").substring(0, 2).toUpperCase();
   }
+}
+
+/* DAGELIJKSE BIJBELTEKST */
+const dailyBibleVerses = [
+  { reference: "Psalm 23:1", text: "De HEERE is mijn Herder, mij zal niets ontbreken." },
+  { reference: "Spreuken 3:5", text: "Vertrouw op den HEERE met uw ganse hart, en steun op uw verstand niet." },
+  { reference: "Filippenzen 4:13", text: "Ik vermag alle dingen door Christus, Die mij kracht geeft." },
+  { reference: "Psalm 119:105", text: "Uw woord is een lamp voor mijn voet, en een licht voor mijn pad." },
+  { reference: "Johannes 3:16", text: "Want alzo lief heeft God de wereld gehad, dat Hij Zijn eniggeboren Zoon gegeven heeft." },
+  { reference: "Mattheüs 5:16", text: "Laat uw licht alzo schijnen voor de mensen, dat zij uw goede werken mogen zien." },
+  { reference: "Jesaja 41:10", text: "Vrees niet, want Ik ben met u; zie niet om, want Ik ben uw God." },
+  { reference: "Romeinen 8:28", text: "Dengenen, die God liefhebben, werken alle dingen mede ten goede." },
+  { reference: "1 Korinthe 13:13", text: "En nu blijft geloof, hoop en liefde, deze drie; doch de meeste van deze is de liefde." },
+  { reference: "Psalm 46:2", text: "God is ons een Toevlucht en Sterkte; Hij is krachtelijk bevonden een Hulp in benauwdheden." },
+  { reference: "Jozua 1:9", text: "Wees sterk en heb goeden moed; vrees niet en ontzet u niet, want de HEERE, uw God, is met u." },
+  { reference: "Mattheüs 11:28", text: "Komt herwaarts tot Mij, allen die vermoeid en belast zijt, en Ik zal u rust geven." },
+  { reference: "Psalm 37:5", text: "Wentel uw weg op den HEERE, en vertrouw op Hem; Hij zal het maken." },
+  { reference: "2 Timotheüs 1:7", text: "God heeft ons niet gegeven een geest der vreesachtigheid, maar der kracht, en der liefde, en der gematigdheid." }
+];
+
+function renderDailyBibleVerse() {
+  const panel = document.getElementById("dailyBibleVerse");
+  if (!panel) return;
+  const now = new Date();
+  const dayNumber = Math.floor(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / 86400000);
+  const verse = dailyBibleVerses[((dayNumber % dailyBibleVerses.length) + dailyBibleVerses.length) % dailyBibleVerses.length];
+  const dateLabel = now.toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" });
+  panel.innerHTML = '<h2>📖 Bijbeltekst van vandaag</h2><p><strong class="gold">' + verse.reference + '</strong></p><p>' + verse.text + '</p><p class="page-description" style="margin:12px 0 0">Dagtekst · ' + dateLabel + '</p>';
 }
 
 /* PAGINA'S */
