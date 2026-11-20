@@ -185,6 +185,9 @@ button{cursor:pointer}
 .mobile-bottom-nav svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .mobile-menu-backdrop{display:none;position:fixed;inset:60px 0 0;background:#0008;z-index:30;touch-action:none;overscroll-behavior:contain}
 body.mobile-menu-open{overflow:hidden;overscroll-behavior:none;touch-action:auto}
+body.mobile-menu-open .mobile-logout-floating{display:none!important}
+body.mobile-menu-open .sidebar{overflow-y:auto;overflow-x:hidden;touch-action:pan-y;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+body.mobile-menu-open .mobile-menu-backdrop{touch-action:none}
 body.mobile-menu-open .sidebar{touch-action:pan-y;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
 body.mobile-menu-open .mobile-menu-backdrop{touch-action:none}
 
@@ -795,9 +798,29 @@ function toggleMobileMenu(force) {
   const backdrop = document.getElementById("mobileMenuBackdrop");
   if (!sidebar || !backdrop) return;
   const open = typeof force === "boolean" ? force : !sidebar.classList.contains("mobile-open");
+  if (open && !sidebar.classList.contains("mobile-open")) {
+    // Vergrendel de pagina op iPhone/iPad; overflow:hidden alleen is daar niet betrouwbaar.
+    const pageScrollY = window.scrollY || window.pageYOffset || 0;
+    document.body.dataset.menuScrollY = String(pageScrollY);
+    document.body.style.position = "fixed";
+    document.body.style.top = "-" + pageScrollY + "px";
+    document.body.style.left = "0";
+    document.body.style.right = "0";
+    document.body.style.width = "100%";
+  }
   sidebar.classList.toggle("mobile-open", open);
   backdrop.classList.toggle("visible", open);
   document.body.classList.toggle("mobile-menu-open", open);
+  if (!open) {
+    const pageScrollY = Number(document.body.dataset.menuScrollY || 0);
+    document.body.style.position = "";
+    document.body.style.top = "";
+    document.body.style.left = "";
+    document.body.style.right = "";
+    document.body.style.width = "";
+    delete document.body.dataset.menuScrollY;
+    window.scrollTo(0, pageScrollY);
+  }
 }
 function mobileNavigate(page, button) {
   showPage(page);
