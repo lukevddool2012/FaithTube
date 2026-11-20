@@ -217,15 +217,24 @@ const vapidSubject = process.env.VAPID_SUBJECT || "mailto:beheer@faithtube.nl";
 const pushEnabled = Boolean(vapidPublicKey && vapidPrivateKey);
 if (pushEnabled) webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
 async function sendPushToUser(userId, payload) {
-    if (!pushEnabled) return;
+    if (!pushEnabled) return { sent: 0, failed: 0 };
     const rows = db.prepare("SELECT id, subscription_json FROM push_subscriptions WHERE user_id = ?").all(userId);
+    let sent = 0;
+    let failed = 0;
     for (const row of rows) {
-        try { await webpush.sendNotification(JSON.parse(row.subscription_json), JSON.stringify(payload)); }
-        catch (error) {
-            if (error.statusCode === 404 || error.statusCode === 410) db.prepare("DELETE FROM push_subscriptions WHERE id = ?").run(row.id);
-            else console.error("Pushmelding mislukt:", error.message);
+        try {
+            await webpush.sendNotification(JSON.parse(row.subscription_json), JSON.stringify(payload));
+            sent += 1;
+        } catch (error) {
+            failed += 1;
+            if (error.statusCode === 404 || error.statusCode === 410) {
+                db.prepare("DELETE FROM push_subscriptions WHERE id = ?").run(row.id);
+            } else {
+                console.error("Pushmelding mislukt:", error.statusCode, error.message);
+            }
         }
     }
+    return { sent, failed };
 }
 
 // Inlogcontrole
@@ -1028,6 +1037,20 @@ app.delete("/push/subscribe", authenticate, (req, res) => {
     const endpoint = typeof req.body.endpoint === "string" ? req.body.endpoint : "";
     db.prepare("DELETE FROM push_subscriptions WHERE user_id = ? AND endpoint = ?").run(req.user.id, endpoint);
     res.json({ success: true });
+});
+
+// Stuur direct na inschakelen een echte test-push naar dit apparaat.
+app.post("/push/test", authenticate, async (req, res) => {
+    if (!pushEnabled) return res.status(503).json({ error: "Pushmeldingen zijn nog niet geconfigureerd op de server." });
+    const result = await sendPushToUser(req.user.id, {
+        title: "FaithTube-meldingen werken!",
+        body: "Je ontvangt vanaf nu meldingen van FaithTube op je telefoon.",
+        url: "/"
+    });
+    if (!result.sent) {
+        return res.status(502).json({ error: "De testmelding kon niet worden verstuurd. Controleer je telefooninstellingen en probeer opnieuw." });
+    }
+    res.json({ success: true, sent: result.sent });
 });
 
 // MELDINGEN
