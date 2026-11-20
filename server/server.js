@@ -145,9 +145,12 @@ db.exec(`CREATE TABLE IF NOT EXISTS admin_profiles (
 
 // Neem het oude hoofdbeheerderprofiel eenmalig mee naar het e-mailadres
 // van het hoofdaccount. Het oude profiel wordt niet verwijderd.
-const legacyAdminProfile = db.prepare(
-    "SELECT name, profile_image, bio FROM admin_profile WHERE id = 1"
-).get();
+const legacyAdminProfileTableExists = Boolean(db.prepare(
+    "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'admin_profile'"
+).get());
+const legacyAdminProfile = legacyAdminProfileTableExists
+    ? db.prepare("SELECT name, profile_image, bio FROM admin_profile WHERE id = 1").get()
+    : null;
 if (legacyAdminProfile && ADMIN_EMAIL) {
     db.prepare(`
         INSERT OR IGNORE INTO admin_profiles (email, name, profile_image, bio)
