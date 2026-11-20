@@ -270,6 +270,63 @@ body{
   .mobile-bottom-nav{display:grid}
 }
 
+
+/* Zorg dat iedere pagina volledig verticaal kan scrollen. */
+html{
+  min-height:100%;
+  height:auto;
+  overflow-x:hidden;
+  overflow-y:auto;
+  scroll-padding-top:80px;
+}
+body{
+  min-height:100vh;
+  min-height:100dvh;
+  height:auto;
+  overflow-x:hidden;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+}
+#appScreen{
+  min-height:100vh;
+  min-height:100dvh;
+  height:auto;
+  overflow:visible;
+}
+.layout{
+  min-height:calc(100vh - 70px);
+  min-height:calc(100dvh - 70px);
+  align-items:stretch;
+  overflow:visible;
+}
+.main-content{
+  min-height:calc(100vh - 70px);
+  min-height:calc(100dvh - 70px);
+  height:auto;
+  overflow:visible;
+  padding-bottom:40px;
+}
+.page.active{
+  min-height:1px;
+  height:auto;
+  overflow:visible;
+}
+@media(max-width:800px){
+  .layout{
+    min-height:calc(100vh - 60px);
+    min-height:calc(100dvh - 60px);
+  }
+  .main-content{
+    min-height:calc(100vh - 60px);
+    min-height:calc(100dvh - 60px);
+    padding-bottom:calc(112px + env(safe-area-inset-bottom));
+    -webkit-overflow-scrolling:touch;
+  }
+  .page.active{
+    padding-bottom:8px;
+  }
+}
+
 </style>
 </head>
 <body>
