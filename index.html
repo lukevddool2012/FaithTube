@@ -263,6 +263,11 @@ body{
 }
 .mobile-bottom-nav button.active,.mobile-bottom-nav button:focus-visible{color:#f2c66d}
 
+/* Zorg dat de snelle navigatie in de geïnstalleerde mobiele app zichtbaar is. */
+@media(max-width:800px){
+  .mobile-bottom-nav{display:grid}
+}
+
 </style>
 </head>
 <body>
@@ -468,6 +473,15 @@ const API_BASE = "https://fathtube-server.onrender.com";
 
 let token = localStorage.getItem("faithtube_token") || "";
 let currentUser = null;
+
+function isFaithTubeAdmin(user = currentUser) {
+  const email = String(user?.email || "").trim().toLowerCase();
+  return Boolean(user && (
+    user.role === "admin" ||
+    email === "lukevandendool2012@gmail.com" ||
+    email === "zilanzaal1504@gmail.com"
+  ));
+}
 let approvedVideos = [];
 let favorites = [];
 let playlists = [];
@@ -628,7 +642,7 @@ async function startApp() {
     document.getElementById("authScreen").classList.add("hidden");
     document.getElementById("appScreen").classList.remove("hidden");
 
-    const isAdmin = currentUser.role === "admin" || String(currentUser.email || "").toLowerCase() === "lukevandendool2012@gmail.com";
+    const isAdmin = isFaithTubeAdmin(currentUser);
     document.getElementById("adminNav").classList.toggle("hidden", !isAdmin);
     document.getElementById("mobileAdminButton").classList.toggle("hidden", !isAdmin);
 
@@ -711,7 +725,7 @@ function showPage(page, clickedButton = null) {
   if (page === "playlists") loadPlaylists();
   if (page === "notifications") loadNotifications();
   if (page === "profile") loadProfile();
-  if (page === "admin" && currentUser?.role === "admin") renderAdmin();
+  if (page === "admin" && isFaithTubeAdmin()) renderAdmin();
   if (page === "youth") loadYouth();
 }
 
@@ -1722,7 +1736,7 @@ async function updateReportStatus(id, status) {
 /* BEHEERDERSDASHBOARD */
 
 async function renderAdmin() {
-  if (!currentUser || (currentUser.role !== "admin" && String(currentUser.email || "").toLowerCase() !== "lukevandendool2012@gmail.com")) {
+  if (!isFaithTubeAdmin()) {
     toast("Je hebt geen beheerderstoegang.");
     showPage("home");
     return;
