@@ -1206,6 +1206,58 @@ app.post("/admin/reports/:id/status", authenticate, adminOnly, (req, res) => {
     res.json({ success: true });
 });
 
+// HOOFDADMIN: alleen het vaste hoofdaccount mag andere beheerders toevoegen.
+function mainAdminOnly(req, res, next) {
+    if (req.user.role !== "admin" || String(req.user.email || "").toLowerCase() !== ADMIN_EMAIL) {
+        return res.status(403).json({ error: "Alleen de hoofdbeheerder kan beheerdersaccounts toevoegen." });
+    }
+    next();
+}
+
+app.get("/admin/admins", authenticate, mainAdminOnly, (req, res) => {
+    const admins = db.prepare(
+        "SELECT id, name, email, verified, created_at FROM users WHERE role = 'admin' ORDER BY created_at ASC"
+    ).all();
+    res.json([
+        { id: "faithtube-main-admin", name: "FaithTube hoofdbeheerder", email: ADMIN_EMAIL, verified: true, isMainAdmin: true },
+        ...admins.map(admin => ({ ...admin, isMainAdmin: false }))
+    ]);
+});
+
+app.post("/admin/admins", authenticate, mainAdminOnly, async (req, res) => {
+    const name = typeof req.body.name === "string" ? req.body.name.trim() : "";
+    const email = typeof req.body.email === "string" ? req.body.email.trim().toLowerCase() : "";
+    const password = typeof req.body.password === "string" ? req.body.password : "";
+
+    if (name.length < 2 || name.length > 60 ||
+        !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) ||
+        password.length < 8 || password.length > 72) {
+        return res.status(400).json({ error: "Vul een naam, geldig e-mailadres en wachtwoord van 8 tot 72 tekens in." });
+    }
+    if (email === ADMIN_EMAIL) {
+        return res.status(409).json({ error: "Dit e-mailadres is al het hoofdbeheerdersaccount." });
+    }
+    const existing = db.prepare("SELECT id, role FROM users WHERE lower(email) = ?").get(email);
+    if (existing) {
+        return res.status(409).json({ error: "Dit e-mailadres heeft al een FaithTube-account. Gebruik een ander e-mailadres." });
+    }
+
+    try {
+        const passwordHash = await bcrypt.hash(password, 12);
+        const result = db.prepare(
+            "INSERT INTO users (name, email, password, role, verified) VALUES (?, ?, ?, 'admin', 1)"
+        ).run(name, email, passwordHash);
+        res.status(201).json({
+            success: true,
+            message: "Beheerdersaccount aangemaakt. De beheerder kan nu inloggen.",
+            admin: { id: result.lastInsertRowid, name, email, verified: true }
+        });
+    } catch (error) {
+        console.error("Beheerdersaccount aanmaken mislukt:", error);
+        res.status(500).json({ error: "Het beheerdersaccount kon niet worden aangemaakt." });
+    }
+});
+
 // ALLE ACCOUNTS BEKIJKEN
 app.get("/admin/users", authenticate, adminOnly, (req, res) => {
     const users = db.prepare(`

@@ -448,6 +448,17 @@ body{
           <p id="dropboxAdminStatus">Dropbox-status wordt gecontroleerd...</p>
           <button type="button" class="gold-btn" onclick="connectFaithTubeDropbox()">Dropbox koppelen</button>
         </div>
+        <div class="panel" id="adminAccountsPanel">
+          <h2>Hoofdbeheerder: beheerdersaccounts toevoegen</h2>
+          <p>Alleen het hoofdbeheerdersaccount kan nieuwe beheerders aanmaken.</p>
+          <div class="form-grid" style="margin-top:16px">
+            <div class="field"><label>Naam nieuwe beheerder</label><input id="newAdminName" maxlength="60" placeholder="Naam"></div>
+            <div class="field"><label>E-mailadres</label><input id="newAdminEmail" type="email" placeholder="beheerder@email.nl"></div>
+            <div class="field"><label>Tijdelijk wachtwoord (minimaal 8 tekens)</label><input id="newAdminPassword" type="password" minlength="8" maxlength="72" autocomplete="new-password" placeholder="Kies een wachtwoord"></div>
+            <div class="field" style="display:flex;align-items:end"><button type="button" class="gold-btn" onclick="createAdminAccount()">Beheerdersaccount aanmaken</button></div>
+          </div>
+          <div id="adminAccountsList" style="margin-top:16px"></div>
+        </div>
         <div class="section"><h2 class="section-title">⏳ Video's die wachten op goedkeuring</h2><div id="pendingVideos"></div></div>
         <div class="section"><h2 class="section-title">👥 Accounts beheren</h2><div id="adminUsers"></div></div>
         <div class="section"><h2 class="section-title">💬 Reacties beheren</h2><div id="adminComments"></div></div>
@@ -1769,6 +1780,9 @@ async function renderAdmin() {
     }
 
     await loadAdminUsers();
+    await loadAdminAccounts();
+    const canManageAdmins = String(currentUser.email || "").toLowerCase() === "lukevandendool2012@gmail.com";
+    document.getElementById("adminAccountsPanel")?.classList.toggle("hidden", !canManageAdmins);
     await loadAdminComments();
     await loadAdminReports();
     await loadDropboxStatus();
@@ -1827,6 +1841,57 @@ async function rejectVideo(id) {
     if (currentUser && currentUser.role === "admin") await loadNotifications();
   } catch (error) {
     toast(error.message);
+  }
+}
+
+/* BEHEERDERSACCOUNTS — alleen hoofdbeheerder */
+
+async function loadAdminAccounts() {
+  const element = document.getElementById("adminAccountsList");
+  if (!element || !isFaithTubeAdmin()) return;
+  if (String(currentUser.email || "").toLowerCase() !== "lukevandendool2012@gmail.com") {
+    element.innerHTML = "";
+    return;
+  }
+  try {
+    const admins = await api("/admin/admins");
+    element.innerHTML = admins.map(admin => `
+      <div class="panel" style="margin-top:10px">
+        <strong>${escapeHTML(admin.name)}</strong>
+        <p>${escapeHTML(admin.email)}</p>
+        <p>${admin.isMainAdmin ? "Hoofdbeheerder" : "Beheerder"}</p>
+      </div>
+    `).join("");
+  } catch (error) {
+    element.innerHTML = `<div class="empty-state">${escapeHTML(error.message)}</div>`;
+  }
+}
+
+async function createAdminAccount() {
+  if (!currentUser || String(currentUser.email || "").toLowerCase() !== "lukevandendool2012@gmail.com") {
+    toast("Alleen de hoofdbeheerder kan beheerdersaccounts toevoegen.");
+    return;
+  }
+  const name = document.getElementById("newAdminName").value.trim();
+  const email = document.getElementById("newAdminEmail").value.trim();
+  const password = document.getElementById("newAdminPassword").value;
+  if (!name || !email || password.length < 8) {
+    toast("Vul een naam, geldig e-mailadres en wachtwoord van minimaal 8 tekens in.");
+    return;
+  }
+  try {
+    const result = await api("/admin/admins", {
+      method: "POST",
+      body: JSON.stringify({ name, email, password })
+    });
+    document.getElementById("newAdminName").value = "";
+    document.getElementById("newAdminEmail").value = "";
+    document.getElementById("newAdminPassword").value = "";
+    toast(result.message || "Beheerdersaccount aangemaakt.");
+    await loadAdminAccounts();
+    await loadAdminUsers();
+  } catch (error) {
+    toast(error.message || "Beheerdersaccount aanmaken is mislukt.");
   }
 }
 
