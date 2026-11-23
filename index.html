@@ -384,6 +384,10 @@ body{
       <button class="nav-item mobile-bottom-duplicate" onclick="showPage('videos',this)"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="m10 8 6 4-6 4z"/></svg></span><span>Alle video's</span></button>
 
       <div class="nav-label">CATEGORIEËN</div>
+<button class="nav-item" onclick="showPage('reading',this)"><span class="nav-icon">📖</span><span>Bijbelleesplannen</span></button>
+<button class="nav-item" onclick="showPage('live',this)"><span class="nav-icon">🔴</span><span>Live</span></button>
+<button class="nav-item" onclick="showPage('kids',this)"><span class="nav-icon">🧸</span><span>Kinderhoek</span></button>
+<button class="nav-item" onclick="showPage('achievements',this)"><span class="nav-icon">🏅</span><span>Badges</span></button>
       <button class="nav-item" onclick="showCategory('Preek')"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v18M5 10h14"/></svg></span><span>Preken</span></button>
       <button class="nav-item" onclick="showCategory('Worship')"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13M9 8l12-2"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span><span>Worship</span></button>
       <button class="nav-item" onclick="showCategory('Bijbelstudie')"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4zM8 8h8M8 12h8M8 16h5"/></svg></span><span>Bijbelstudie</span></button>
@@ -426,11 +430,15 @@ body{
         <div class="panel" id="dailyBibleVerse"><h2>📖 Bijbeltekst van vandaag</h2><p>De Bijbeltekst wordt geladen...</p></div>
       </section>
 
-      <section id="page-videos" class="page"><h1 class="page-heading">Alle video's</h1><p class="page-description">Ontdek alle goedgekeurde video's op FaithTube.</p><div id="allVideos" class="video-grid"></div></section>
+      <section id="page-videos" class="page"><h1 class="page-heading">Alle video's</h1><p class="page-description">Ontdek en filter alle goedgekeurde video's.</p><div class="panel" style="display:flex;gap:10px;flex-wrap:wrap"><select id="videoCategoryFilter" onchange="applyVideoFilters()" class="action-btn"><option value="">Alle categorieën</option><option>Preek</option><option>Worship</option><option>Bijbelstudie</option></select><select id="videoSortFilter" onchange="applyVideoFilters()" class="action-btn"><option value="new">Nieuwste eerst</option><option value="popular">Populairste eerst</option></select><input id="videoDateFilter" type="date" onchange="applyVideoFilters()" class="action-btn"></div><div id="allVideos" class="video-grid"></div></section>
       <section id="page-category" class="page"><h1 id="categoryTitle" class="page-heading">Categorie</h1><p class="page-description">Video's binnen deze categorie.</p><div id="categoryVideos" class="video-grid"></div></section>
       <section id="page-watch" class="page"><div id="watchContent"></div></section>
       <section id="page-youth" class="page"><h1 class="page-heading">⚡ FaithTube Youth</h1><p class="page-description">Inspiratie, geloof en video's voor jongeren.</p><div id="youthVideos" class="video-grid"></div></section>
-      <section id="page-favorites" class="page"><h1 class="page-heading">♡ Mijn favorieten</h1><p class="page-description">Video's die je hebt opgeslagen.</p><div id="favoriteVideos" class="video-grid"></div></section>
+      <section id="page-favorites"
+<section id="page-reading" class="page"><h1 class="page-heading">📖 Bijbelleesplannen</h1><p class="page-description">Kies een leesplan en houd je voortgang bij.</p><div id="readingPlans"></div></section>
+<section id="page-live" class="page"><h1 class="page-heading">🔴 Live-uitzendingen</h1><p class="page-description">Bekijk live kerkdiensten en samenkomsten.</p><div id="liveStreams"></div></section>
+<section id="page-kids" class="page"><h1 class="page-heading">🧸 Kinderhoek</h1><p class="page-description">Christelijke video's voor kinderen.</p><div id="kidsVideos" class="video-grid"></div></section>
+<section id="page-achievements" class="page"><h1 class="page-heading">🏅 Mijn badges</h1><p class="page-description">Ontdek wat je al hebt bereikt.</p><div id="achievementList"></div></section> class="page"><h1 class="page-heading">♡ Mijn favorieten</h1><p class="page-description">Video's die je hebt opgeslagen.</p><div id="favoriteVideos" class="video-grid"></div></section>
       <section id="page-history" class="page"><h1 class="page-heading">◷ Kijkgeschiedenis</h1><p class="page-description">Video's die je eerder hebt bekeken.</p><div id="historyVideos" class="video-grid"></div></section>
       <section id="page-follows" class="page"><h1 class="page-heading">♧ Kanalen die ik volg</h1><p class="page-description">Ontdek de makers die je volgt.</p><div id="followList"></div></section>
 
@@ -506,7 +514,7 @@ body{
 
 <section id="page-admin" class="page">
         <div class="section"><h2 class="section-title">Meldingen van gebruikers</h2><div id="adminReports"></div></div>
-        <h1 class="page-heading">⚙ Beheerdersdashboard</h1><p class="page-description">Beheer video's, accounts en reacties.</p>
+        <h1 class="page-heading">⚙ Beheerdersdashboard</h1><div class="panel"><h2>📊 Platformstatistieken</h2><div id="adminStats">Statistieken laden...</div></div><div class="panel"><h2>🔴 Live-uitzending toevoegen</h2><div class="field"><label>Titel</label><input id="liveTitle"></div><div class="field"><label>Beschrijving</label><input id="liveDescription"></div><div class="field"><label>YouTube/Twitch HTTPS-link</label><input id="liveEmbedUrl" placeholder="https://www.youtube.com/watch?v=..."></div><button class="gold-btn" onclick="createLiveStream()">Live-uitzending publiceren</button></div><p class="page-description">Beheer video's, accounts en reacties.</p>
         <div class="panel" id="dropboxAdminPanel">
           <h2>Dropbox-opslag</h2>
           <p id="dropboxAdminStatus">Dropbox-status wordt gecontroleerd...</p>
@@ -557,6 +565,7 @@ function isFaithTubeAdmin(user = currentUser) {
     email === "zilanzaal1504@gmail.com"
   ));
 }
+let currentWatchingVideoId = null;
 let approvedVideos = [];
 let favorites = [];
 let playlists = [];
@@ -868,6 +877,10 @@ function showPage(page, clickedButton = null) {
   if (page === "profile") loadProfile();
   if (page === "admin" && isFaithTubeAdmin()) renderAdmin();
   if (page === "youth") loadYouth();
+  if (page === "reading") loadReadingPlans();
+  if (page === "live") loadLiveStreams();
+  if (page === "kids") loadKidsVideos();
+  if (page === "achievements") loadAchievements();
 }
 
 /* VIDEO'S */
@@ -996,6 +1009,7 @@ async function watchVideo(id) {
   }
 
   showPage("watch");
+  currentWatchingVideoId = Number(id);
 
   const videoUrl = video.video_url || "";
   let player = "";
@@ -1041,6 +1055,7 @@ async function watchVideo(id) {
         : ""}
     </div>
     ${study}
+    <div class="panel"><h2>📝 Mijn persoonlijke notities</h2><textarea id="videoNote" rows="4" placeholder="Schrijf hier je eigen aantekeningen..."></textarea><button class="gold-btn" style="margin-top:10px" onclick="saveVideoNote(currentWatchingVideoId)">Notitie opslaan</button></div>
     <div class="panel">
       <h2>Reacties</h2>
       <div class="field">
@@ -1058,6 +1073,7 @@ async function watchVideo(id) {
   }
 
   loadComments(id);
+  loadVideoNote(id);
 }
 
 async function loadComments(videoId) {
@@ -1975,6 +1991,7 @@ async function renderAdmin() {
       `).join("");
     }
 
+    await loadAdminStats();
     await loadAdminUsers();
     await loadAdminAccounts();
     const canManageAdmins = String(currentUser.email || "").toLowerCase() === "lukevandendool2012@gmail.com";
@@ -2244,6 +2261,20 @@ if ("serviceWorker" in navigator) {
     });
   });
 }
+
+/* NIEUWE FAITHTUBE FUNCTIES */
+async function loadKidsVideos(){const list=approvedVideos.filter(v=>/kind|kids/i.test(String(v.category||"")));renderVideoList("kidsVideos",list);}
+function applyVideoFilters(){let list=[...approvedVideos];const c=document.getElementById("videoCategoryFilter")?.value||"";const d=document.getElementById("videoDateFilter")?.value||"";const sort=document.getElementById("videoSortFilter")?.value||"new";if(c)list=list.filter(v=>v.category===c);if(d)list=list.filter(v=>String(v.created_at||"").slice(0,10)>=d);list.sort((a,b)=>sort==="popular"?Number(b.views_count||0)-Number(a.views_count||0):String(b.created_at||"").localeCompare(String(a.created_at||"")));renderVideoList("allVideos",list);}
+async function loadReadingPlans(){const el=document.getElementById("readingPlans");if(!el)return;try{const data=await api("/reading-plans");el.innerHTML=data.plans.map(plan=>{const done=(data.progress.find(p=>p.planId===plan.id)||{}).completedDays||[];return '<div class="panel"><h2>'+escapeHTML(plan.name)+'</h2><p>'+escapeHTML(plan.description)+'</p><p>'+done.length+' van '+plan.days.length+' dagen voltooid</p>'+plan.days.map(day=>'<label style="display:block;margin:9px 0"><input type="checkbox" '+(done.includes(day.day)?'checked':'')+' onchange="toggleReadingDay(\''+plan.id+'\','+day.day+',this.checked)"> Dag '+day.day+': '+escapeHTML(day.reading)+'</label>').join('')+'</div>';}).join('');}catch(e){el.textContent=e.message;}}
+async function toggleReadingDay(id,day,checked){try{const data=await api("/reading-plans");const done=(data.progress.find(p=>p.planId===id)||{}).completedDays||[];const next=checked?[...done,day]:done.filter(n=>n!==day);await api("/reading-plans/"+id+"/progress",{method:"PUT",body:JSON.stringify({completedDays:next})});toast("Leesvoortgang opgeslagen.");}catch(e){toast(e.message);}}
+function liveEmbed(url){try{const u=new URL(url);if(u.hostname==="youtu.be")return "https://www.youtube-nocookie.com/embed/"+u.pathname.slice(1);if(u.hostname.includes("youtube.com")){const id=u.searchParams.get("v")||(u.pathname.match(/\/live\/([^/]+)/)||[])[1];return id?"https://www.youtube-nocookie.com/embed/"+id:u.href;}if(u.hostname.includes("twitch.tv"))return "https://player.twitch.tv/?channel="+u.pathname.split("/").filter(Boolean).pop()+"&parent="+location.hostname;}catch(e){}return "";}
+async function loadLiveStreams(){const el=document.getElementById("liveStreams");if(!el)return;try{const items=await api("/live");el.innerHTML=items.length?items.map(x=>'<div class="panel"><h2>🔴 '+escapeHTML(x.title)+'</h2><p>'+escapeHTML(x.description||"")+'</p><div style="aspect-ratio:16/9"><iframe src="'+escapeHTML(liveEmbed(x.embed_url))+'" title="'+escapeHTML(x.title)+'" allowfullscreen style="width:100%;height:100%;border:0"></iframe></div></div>').join(""):'<div class="empty-state">Er zijn momenteel geen live-uitzendingen.</div>';}catch(e){el.textContent=e.message;}}
+async function createLiveStream(){try{await api("/admin/live",{method:"POST",body:JSON.stringify({title:document.getElementById("liveTitle").value,description:document.getElementById("liveDescription").value,embedUrl:document.getElementById("liveEmbedUrl").value})});toast("Live-uitzending gepubliceerd.");loadLiveStreams();}catch(e){toast(e.message);}}
+async function loadAchievements(){const el=document.getElementById("achievementList");if(!el)return;try{const items=await api("/achievements");el.innerHTML=items.map(x=>'<div class="panel"><h2>'+(x.earned?'🏅':'🔒')+' '+escapeHTML(x.name)+'</h2><p>'+escapeHTML(x.description)+'</p><p>'+(x.earned?'Behaald!':'Nog te behalen')+'</p></div>').join("");}catch(e){el.textContent=e.message;}}
+async function loadVideoNote(id){const el=document.getElementById("videoNote");if(!el)return;try{const x=await api("/videos/"+id+"/notes");el.value=x.note||"";}catch(e){el.value="";}}
+async function saveVideoNote(id){if(!id)return;try{await api("/videos/"+id+"/notes",{method:"PUT",body:JSON.stringify({note:document.getElementById("videoNote").value})});toast("Notitie opgeslagen.");}catch(e){toast(e.message);}}
+async function loadAdminStats(){const el=document.getElementById("adminStats");if(!el)return;try{const x=await api("/admin/stats");el.innerHTML='<div class="form-grid"><div><strong>'+x.users+'</strong><p>Gebruikers</p></div><div><strong>'+x.videos+'</strong><p>Goedgekeurde video\\'s</p></div><div><strong>'+x.pending+'</strong><p>Wachten op goedkeuring</p></div><div><strong>'+x.views+'</strong><p>Weergaven</p></div></div><h3>Populairste video\\'s</h3>'+x.popular.map(v=>'<p>'+escapeHTML(v.title)+' — '+v.views_count+' weergaven</p>').join("");}catch(e){el.textContent=e.message;}}
+
 </script>
 
 </body>
