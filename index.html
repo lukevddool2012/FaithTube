@@ -1081,24 +1081,29 @@ async function loadComments(videoId) {
     const comments = await api("/videos/" + videoId + "/comments");
     const element = document.getElementById("commentsList");
     if (!element) return;
-
-    if (!comments.length) {
+    const roots = comments.filter(comment => !comment.parent_comment_id);
+    if (!roots.length) {
       element.innerHTML = `<p style="margin-top:15px">Nog geen reacties.</p>`;
       return;
     }
-
-    element.innerHTML = comments.map(comment => `
-      <div class="comment">
-        <strong>${escapeHTML(comment.author_name || comment.name || "Gebruiker")}</strong>
-        <p>${escapeHTML(comment.comment)}</p>
-        <button class="action-btn" onclick="replyToComment(${Number(comment.id)},${Number(videoId)})">Beantwoorden</button>
-      </div>
-    `).join("");
+    element.innerHTML = roots.map(comment => {
+      const replies = comments.filter(reply => Number(reply.parent_comment_id) === Number(comment.id));
+      return `
+        <div class="comment">
+          <strong>${escapeHTML(comment.author_name || comment.name || "Gebruiker")}</strong>
+          <p>${escapeHTML(comment.comment)}</p>
+          <button class="action-btn" onclick="replyToComment(${Number(comment.id)},${Number(videoId)})">Beantwoorden</button>
+          ${replies.map(reply => `
+            <div class="comment" style="margin:12px 0 0 22px;padding-left:14px;border-left:2px solid var(--line)">
+              <strong>${escapeHTML(reply.author_name || "Gebruiker")}</strong>
+              <p>${escapeHTML(reply.comment)}</p>
+            </div>`).join("")}
+        </div>`;
+    }).join("");
   } catch (error) {
     console.warn("Reacties laden mislukt:", error.message);
   }
 }
-
 async function replyToComment(commentId,videoId){const comment=prompt("Schrijf je antwoord:");if(!comment||!comment.trim())return;try{await api("/videos/"+videoId+"/comments/"+commentId+"/replies",{method:"POST",body:JSON.stringify({comment:comment.trim()})});toast("Antwoord geplaatst.");loadComments(videoId);}catch(e){toast(e.message);}}
 async function postComment(videoId) {
   const input = document.getElementById("commentInput");
@@ -2270,9 +2275,9 @@ function applyVideoFilters(){let list=[...approvedVideos];const c=document.getEl
 async function loadReadingPlans(){const el=document.getElementById("readingPlans");if(!el)return;try{const data=await api("/reading-plans");el.innerHTML=data.plans.map(plan=>{const done=(data.progress.find(p=>p.planId===plan.id)||{}).completedDays||[];return '<div class="panel"><h2>'+escapeHTML(plan.name)+'</h2><p>'+escapeHTML(plan.description)+'</p><p>'+done.length+' van '+plan.days.length+' dagen voltooid</p>'+plan.days.map(day=>'<label style="display:block;margin:9px 0"><input type="checkbox" '+(done.includes(day.day)?'checked':'')+' onchange="toggleReadingDay(\''+plan.id+'\','+day.day+',this.checked)"> Dag '+day.day+': '+escapeHTML(day.reading)+'</label>').join('')+'</div>';}).join('');}catch(e){el.textContent=e.message;}}
 async function toggleReadingDay(id,day,checked){try{const data=await api("/reading-plans");const done=(data.progress.find(p=>p.planId===id)||{}).completedDays||[];const next=checked?[...done,day]:done.filter(n=>n!==day);await api("/reading-plans/"+id+"/progress",{method:"PUT",body:JSON.stringify({completedDays:next})});toast("Leesvoortgang opgeslagen.");}catch(e){toast(e.message);}}
 function liveEmbed(url){try{const u=new URL(url);if(u.hostname==="youtu.be")return "https://www.youtube-nocookie.com/embed/"+u.pathname.slice(1);if(u.hostname.includes("youtube.com")){const id=u.searchParams.get("v")||(u.pathname.match(/\/live\/([^/]+)/)||[])[1];return id?"https://www.youtube-nocookie.com/embed/"+id:u.href;}if(u.hostname.includes("twitch.tv"))return "https://player.twitch.tv/?channel="+u.pathname.split("/").filter(Boolean).pop()+"&parent="+location.hostname;}catch(e){}return "";}
-async function loadLiveStreams(){const el=document.getElementById("liveStreams");if(!el)return;try{const items=await api("/live");el.innerHTML=items.length?items.map(x=>'<div class="panel"><h2>🔴 '+escapeHTML(x.title)+'</h2><p>'+escapeHTML(x.description||"")+'</p><div style="aspect-ratio:16/9"><iframe src="'+escapeHTML(liveEmbed(x.embed_url))+'" title="'+escapeHTML(x.title)+'" allowfullscreen style="width:100%;height:100%;border:0"></iframe></div></div>').join(""):'<div class="empty-state">Er zijn momenteel geen live-uitzendingen.</div>';}catch(e){el.textContent=e.message;}}
+async function loadLiveStreams(){const el=document.getElementById("liveStreams");if(!el)return;try{const items=await api("/live");el.innerHTML=items.length?items.map(x=>'<div class="panel"><h2>Live: '+escapeHTML(x.title)+'</h2><p>'+escapeHTML(x.description||"")+'</p><div style="aspect-ratio:16/9"><iframe src="'+escapeHTML(liveEmbed(x.embed_url))+'" title="'+escapeHTML(x.title)+'" allowfullscreen style="width:100%;height:100%;border:0"></iframe></div></div>').join(""):'<div class="empty-state">Er zijn momenteel geen live-uitzendingen.</div>';}catch(e){el.textContent=e.message;}}
 async function createLiveStream(){try{await api("/admin/live",{method:"POST",body:JSON.stringify({title:document.getElementById("liveTitle").value,description:document.getElementById("liveDescription").value,embedUrl:document.getElementById("liveEmbedUrl").value})});toast("Live-uitzending gepubliceerd.");loadLiveStreams();}catch(e){toast(e.message);}}
-async function loadAchievements(){const el=document.getElementById("achievementList");if(!el)return;try{const items=await api("/achievements");el.innerHTML=items.map(x=>'<div class="panel"><h2>'+(x.earned?'🏅':'🔒')+' '+escapeHTML(x.name)+'</h2><p>'+escapeHTML(x.description)+'</p><p>'+(x.earned?'Behaald!':'Nog te behalen')+'</p></div>').join("");}catch(e){el.textContent=e.message;}}
+async function loadAchievements(){const el=document.getElementById("achievementList");if(!el)return;try{const items=await api("/achievements");el.innerHTML=items.map(x=>'<div class="panel"><h2>'+(x.earned?'✓ ':'○ ')+escapeHTML(x.name)+'</h2><p>'+escapeHTML(x.description)+'</p><p>'+(x.earned?'Behaald!':'Nog te behalen')+'</p></div>').join("");}catch(e){el.textContent=e.message;}}
 async function loadVideoNote(id){const el=document.getElementById("videoNote");if(!el)return;try{const x=await api("/videos/"+id+"/notes");el.value=x.note||"";}catch(e){el.value="";}}
 async function saveVideoNote(id){if(!id)return;try{await api("/videos/"+id+"/notes",{method:"PUT",body:JSON.stringify({note:document.getElementById("videoNote").value})});toast("Notitie opgeslagen.");}catch(e){toast(e.message);}}
 async function loadAdminStats(){const el=document.getElementById("adminStats");if(!el)return;try{const x=await api("/admin/stats");el.innerHTML='<div class="form-grid"><div><strong>'+x.users+'</strong><p>Gebruikers</p></div><div><strong>'+x.videos+'</strong><p>Goedgekeurde video\\'s</p></div><div><strong>'+x.pending+'</strong><p>Wachten op goedkeuring</p></div><div><strong>'+x.views+'</strong><p>Weergaven</p></div></div><h3>Populairste video\\'s</h3>'+x.popular.map(v=>'<p>'+escapeHTML(v.title)+' — '+v.views_count+' weergaven</p>').join("");}catch(e){el.textContent=e.message;}}
