@@ -1431,6 +1431,198 @@ app.delete("/admin/comments/:id", authenticate, adminOnly, (req, res) => {
     res.json({ success: result.changes > 0 });
 });
 
+
+/* FAITHTUBE EXTRA FUNCTIES */
+db.exec(`
+CREATE TABLE IF NOT EXISTS user_favorites (
+  user_id INTEGER NOT NULL, video_id INTEGER NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY(user_id, video_id)
+);
+CREATE TABLE IF NOT EXISTS user_playlists (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL,
+  name TEXT NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS playlist_videos (
+  playlist_id INTEGER NOT NULL, video_id INTEGER NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY(playlist_id, video_id)
+);
+CREATE TABLE IF NOT EXISTS video_notes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL,
+  video_id INTEGER NOT NULL, note TEXT NOT NULL,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(user_id, video_id)
+);
+CREATE TABLE IF NOT EXISTS reading_progress (
+  user_id INTEGER NOT NULL, plan_id TEXT NOT NULL,
+  completed_days TEXT NOT NULL DEFAULT '[]',
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY(user_id, plan_id)
+);
+CREATE TABLE IF NOT EXISTS live_streams (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL,
+  description TEXT DEFAULT '', embed_url TEXT NOT NULL,
+  is_live INTEGER NOT NULL DEFAULT 1, created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+`);
+ensureColumn("comments", "parent_comment_id", "INTEGER");
+
+// EXTRA API'S VOOR FAITHTUBE FUNCTIES
+
+// Dagelijkse Bijbeltekst: vaste rotatie van korte teksten, lokaal per datum.
+const dailyVerses = [
+ { text:"De HEER is mijn herder, mij ontbreekt niets.", reference:"Psalm 23:1" },
+ { text:"Wees sterk en moedig, wees niet bang.", reference:"Jozua 1:9" },
+ { text:"De liefde is geduldig en vol goedheid.", reference:"1 Korintiërs 13:4" },
+ { text:"Vertrouw op de HEER met heel je hart.", reference:"Spreuken 3:5" },
+ { text:"Ik vermag alle dingen in Hem die mij kracht geeft.", reference:"Filippenzen 4:13" },
+ { text:"Uw woord is een lamp voor mijn voet.", reference:"Psalm 119:105" },
+ { text:"Wees altijd verheugd, bid onophoudelijk.", reference:"1 Tessalonicenzen 5:16-17" }
+];
+app.get("/daily-verse", (req,res) => {
+ const day = Math.floor(Date.now()/86400000);
+ res.json({ ...dailyVerses[((day%dailyVerses.length)+dailyVerses.length)%dailyVerses.length], date:new Date().toISOString().slice(0,10) });
+});
+
+// Favorieten en eigen afspeellijsten (Later bekijken is standaard).
+app.get("/favorites", authenticate, (req,res) => {
+ if(req.user.role==="admin") return res.json([]);
+ res.json(db.prepare("SELECT videos.*, users.name AS author_name FROM user_favorites JOIN videos ON videos.id=user_favorites.video_id LEFT JOIN users ON users.id=videos.user_id WHERE user_favorites.user_id=? AND videos.approved=1 ORDER BY user_favorites.created_at DESC").all(req.user.id));
+});
+app.post("/favorites/:videoId", authenticate, (req,res) => {
+ if(req.user.role==="admin") return res.status(403).json({error:"Gebruik een bezoekersaccount."});
+ const v=db.prepare("SELECT id FROM videos WHERE id=? AND approved=1").get(req.params.videoId);
+ if(!v) return res.status(404).json({error:"Video niet gevonden."});
+ db.prepare("INSERT OR IGNORE INTO user_favorites(user_id,video_id) VALUES(?,?)").run(req.user.id,v.id);
+ res.json({success:true});
+});
+app.delete("/favorites/:videoId", authenticate, (req,res) => {
+ db.prepare("DELETE FROM user_favorites WHERE user_id=? AND video_id=?").run(req.user.id,req.params.videoId);
+ res.json({success:true});
+});
+app.get("/playlists", authenticate, (req,res) => {
+ if(req.user.role==="admin") return res.json([]);
+ let rows=db.prepare("SELECT * FROM user_playlists WHERE user_id=? ORDER BY id").all(req.user.id);
+ if(!rows.some(x=>x.name==="Later bekijken")) {
+   const r=db.prepare("INSERT INTO user_playlists(user_id,name) VALUES(?,?)").run(req.user.id,"Later bekijken");
+   rows=db.prepare("SELECT * FROM user_playlists WHERE user_id=? ORDER BY id").all(req.user.id);
+ }
+ res.json(rows);
+});
+app.post("/playlists", authenticate, (req,res) => {
+ const name=typeof req.body.name==="string"?req.body.name.trim():"";
+ if(!name||name.length>50) return res.status(400).json({error:"Geef een naam van maximaal 50 tekens."});
+ const exists=db.prepare("SELECT id FROM user_playlists WHERE user_id=? AND name=?").get(req.user.id,name);
+ if(exists) return res.status(409).json({error:"Deze afspeellijst bestaat al."});
+ const r=db.prepare("INSERT INTO user_playlists(user_id,name) VALUES(?,?)").run(req.user.id,name);
+ res.status(201).json({id:r.lastInsertRowid,name});
+});
+app.get("/playlists/:id/videos", authenticate, (req,res) => {
+ const p=db.prepare("SELECT id FROM user_playlists WHERE id=? AND user_id=?").get(req.params.id,req.user.id);
+ if(!p) return res.status(404).json({error:"Afspeellijst niet gevonden."});
+ res.json(db.prepare("SELECT videos.*,users.name AS author_name FROM playlist_videos JOIN videos ON videos.id=playlist_videos.video_id LEFT JOIN users ON users.id=videos.user_id WHERE playlist_videos.playlist_id=? AND videos.approved=1 ORDER BY playlist_videos.created_at DESC").all(p.id));
+});
+app.post("/playlists/:id/videos/:videoId", authenticate, (req,res) => {
+ const p=db.prepare("SELECT id FROM user_playlists WHERE id=? AND user_id=?").get(req.params.id,req.user.id);
+ const v=db.prepare("SELECT id FROM videos WHERE id=? AND approved=1").get(req.params.videoId);
+ if(!p||!v) return res.status(404).json({error:"Afspeellijst of video niet gevonden."});
+ db.prepare("INSERT OR IGNORE INTO playlist_videos(playlist_id,video_id) VALUES(?,?)").run(p.id,v.id);
+ res.json({success:true});
+});
+app.delete("/playlists/:id", authenticate, (req,res) => {
+ const p=db.prepare("SELECT id,name FROM user_playlists WHERE id=? AND user_id=?").get(req.params.id,req.user.id);
+ if(!p) return res.status(404).json({error:"Afspeellijst niet gevonden."});
+ if(p.name==="Later bekijken") return res.status(400).json({error:"De map Later bekijken kan niet worden verwijderd."});
+ db.prepare("DELETE FROM playlist_videos WHERE playlist_id=?").run(p.id);
+ db.prepare("DELETE FROM user_playlists WHERE id=?").run(p.id);
+ res.json({success:true});
+});
+
+// Persoonlijke notities bij video's.
+app.get("/videos/:id/notes", authenticate, (req,res) => {
+ if(req.user.role==="admin") return res.json({note:""});
+ const row=db.prepare("SELECT note FROM video_notes WHERE user_id=? AND video_id=?").get(req.user.id,req.params.id);
+ res.json({note:row?.note||""});
+});
+app.put("/videos/:id/notes", authenticate, (req,res) => {
+ if(req.user.role==="admin") return res.status(403).json({error:"Notities zijn beschikbaar voor bezoekersaccounts."});
+ const note=typeof req.body.note==="string"?req.body.note:"";
+ if(note.length>10000) return res.status(400).json({error:"Een notitie mag maximaal 10.000 tekens bevatten."});
+ db.prepare("INSERT INTO video_notes(user_id,video_id,note,updated_at) VALUES(?,?,?,CURRENT_TIMESTAMP) ON CONFLICT(user_id,video_id) DO UPDATE SET note=excluded.note,updated_at=CURRENT_TIMESTAMP").run(req.user.id,req.params.id,note);
+ res.json({success:true});
+});
+
+// Bijbelleesplannen en persoonlijke voortgang.
+const readingPlans=[
+ {id:"30-days",name:"De Bijbel in 30 dagen",description:"Een dagelijks leesritme om de grote lijn van de Bijbel te ontdekken.",days:Array.from({length:30},(_,i)=>({day:i+1,reading:["Genesis 1-4","Genesis 5-8","Genesis 9-12","Genesis 13-16","Genesis 17-20","Genesis 21-24","Genesis 25-28","Genesis 29-32","Genesis 33-36","Genesis 37-40","Genesis 41-44","Genesis 45-48","Genesis 49-50; Exodus 1-2","Exodus 3-6","Exodus 7-10","Exodus 11-14","Exodus 15-18","Exodus 19-22","Exodus 23-26","Exodus 27-30","Exodus 31-34","Exodus 35-38","Exodus 39-40; Leviticus 1-2","Leviticus 3-6","Leviticus 7-10","Leviticus 11-14","Leviticus 15-18","Leviticus 19-22","Leviticus 23-26","Leviticus 27; Numeri 1-4"][i]}))},
+ {id:"7-days",name:"7 dagen met Jezus",description:"Een korte start met passages uit de evangeliën.",days:["Johannes 1","Marcus 1","Lucas 5","Matteüs 5","Johannes 10","Lucas 15","Johannes 20"].map((reading,i)=>({day:i+1,reading}))}
+];
+app.get("/reading-plans", authenticate, (req,res) => {
+ const progress=req.user.role==="admin"?[]:db.prepare("SELECT plan_id,completed_days FROM reading_progress WHERE user_id=?").all(req.user.id);
+ res.json({plans:readingPlans,progress:progress.map(x=>({planId:x.plan_id,completedDays:JSON.parse(x.completed_days||"[]")}))});
+});
+app.put("/reading-plans/:id/progress", authenticate, (req,res) => {
+ if(req.user.role==="admin") return res.status(403).json({error:"Gebruik een bezoekersaccount."});
+ const plan=readingPlans.find(x=>x.id===req.params.id);
+ const days=req.body.completedDays;
+ if(!plan||!Array.isArray(days)||days.some(n=>!Number.isInteger(n)||n<1||n>plan.days.length)) return res.status(400).json({error:"Ongeldige leesplanvoortgang."});
+ db.prepare("INSERT INTO reading_progress(user_id,plan_id,completed_days,updated_at) VALUES(?,?,?,CURRENT_TIMESTAMP) ON CONFLICT(user_id,plan_id) DO UPDATE SET completed_days=excluded.completed_days,updated_at=CURRENT_TIMESTAMP").run(req.user.id,plan.id,JSON.stringify([...new Set(days)]));
+ res.json({success:true});
+});
+
+// Reacties beantwoorden.
+app.post("/videos/:id/comments/:commentId/replies", authenticate, (req,res) => {
+ const body=typeof req.body.comment==="string"?req.body.comment.trim():"";
+ if(!body||body.length>2000||req.user.role==="admin") return res.status(400).json({error:"Reactie is ongeldig of niet toegestaan."});
+ const parent=db.prepare("SELECT id FROM comments WHERE id=? AND video_id=? AND parent_comment_id IS NULL").get(req.params.commentId,req.params.id);
+ if(!parent) return res.status(404).json({error:"Reactie niet gevonden."});
+ const r=db.prepare("INSERT INTO comments(video_id,user_id,comment,parent_comment_id) VALUES(?,?,?,?)").run(req.params.id,req.user.id,body,parent.id);
+ res.status(201).json({commentId:r.lastInsertRowid});
+});
+
+// Live-uitzendingen: beheerder kan een uitzending en veilige HTTPS-embedlink publiceren.
+app.get("/live", (req,res) => res.json(db.prepare("SELECT id,title,description,embed_url,is_live,created_at FROM live_streams WHERE is_live=1 ORDER BY created_at DESC").all()));
+app.post("/admin/live", authenticate, adminOnly, (req,res) => {
+ const title=typeof req.body.title==="string"?req.body.title.trim():"";
+ const description=typeof req.body.description==="string"?req.body.description.trim():"";
+ const url=typeof req.body.embedUrl==="string"?req.body.embedUrl.trim():"";
+ let parsed; try{parsed=new URL(url);}catch{}
+ if(title.length<2||title.length>100||!parsed||parsed.protocol!=="https:"||!["youtube.com","www.youtube.com","youtu.be","player.twitch.tv","twitch.tv"].includes(parsed.hostname)) return res.status(400).json({error:"Vul een titel en geldige HTTPS YouTube- of Twitch-link in."});
+ const r=db.prepare("INSERT INTO live_streams(title,description,embed_url) VALUES(?,?,?)").run(title,description.slice(0,1000),parsed.href);
+ res.status(201).json({id:r.lastInsertRowid,success:true});
+});
+app.delete("/admin/live/:id", authenticate, adminOnly, (req,res) => {
+ db.prepare("UPDATE live_streams SET is_live=0 WHERE id=?").run(req.params.id);
+ res.json({success:true});
+});
+
+// Badges en uitdagingen, gebaseerd op opgeslagen kijk- en leesactiviteit.
+app.get("/achievements", authenticate, (req,res) => {
+ if(req.user.role==="admin") return res.json([]);
+ const views=db.prepare("SELECT COUNT(*) AS n FROM watch_history WHERE user_id=?").get(req.user.id).n;
+ const plans=db.prepare("SELECT completed_days FROM reading_progress WHERE user_id=?").all(req.user.id);
+ const days=plans.reduce((n,p)=>n+JSON.parse(p.completed_days||"[]").length,0);
+ const badges=[
+  {id:"first-video",name:"Eerste stap",description:"Bekijk je eerste video",earned:views>=1},
+  {id:"ten-videos",name:"10 video's bekeken",description:"Bekijk tien video's",earned:views>=10},
+  {id:"first-reading",name:"Bijbellezer",description:"Voltooi je eerste leesdag",earned:days>=1},
+  {id:"seven-days",name:"Een week trouw",description:"Voltooi zeven leesdagen",earned:days>=7},
+  {id:"thirty-days",name:"30 leesdagen",description:"Voltooi dertig leesdagen",earned:days>=30}
+ ];
+ res.json(badges);
+});
+
+// Statistieken voor beheerders.
+app.get("/admin/stats", authenticate, adminOnly, (req,res) => {
+ const users=db.prepare("SELECT COUNT(*) AS n FROM users").get().n;
+ const videos=db.prepare("SELECT COUNT(*) AS n FROM videos WHERE approved=1").get().n;
+ const pending=db.prepare("SELECT COUNT(*) AS n FROM videos WHERE approved=0").get().n;
+ const views=db.prepare("SELECT COALESCE(SUM(views_count),0) AS n FROM videos").get().n;
+ const popular=db.prepare("SELECT title,views_count FROM videos WHERE approved=1 ORDER BY views_count DESC LIMIT 5").all();
+ res.json({users,videos,pending,views,popular});
+});
+
 // FOUTAFHANDELING
 app.use((error, req, res, next) => {
     console.error(error);
