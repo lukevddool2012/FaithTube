@@ -766,7 +766,7 @@ app.post("/videos", authenticate, upload.single("video"), async (req, res) => {
         }
 
         const hasVideoSource = hasVideo || Boolean(validVideoLink);
-        const allowed = ["Preek", "Worship", "Bijbelstudie"];
+        const allowed = ["Preek", "Worship", "Bijbelstudie", "Kinderhoek"];
         if (
             typeof title !== "string" ||
             title.trim().length < 2 ||
