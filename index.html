@@ -455,7 +455,7 @@ body{
         <div class="panel"><h2>Nieuwe video insturen</h2>
           <div class="form-grid" style="margin-top:18px">
             <div class="field"><label>Titel</label><input id="uploadTitle" placeholder="Titel van je video"></div>
-            <div class="field"><label>Categorie</label><select id="uploadCategory"><option value="Preek">Preek</option><option value="Worship">Worship</option><option value="Bijbelstudie">Bijbelstudie</option></select></div>
+            <div class="field"><label>Categorie</label><select id="uploadCategory"><option value="Preek">Preek</option><option value="Worship">Worship</option><option value="Bijbelstudie">Bijbelstudie</option><option value="Kinderhoek">Kinderhoek</option></select></div>
             <div class="field full"><label>Beschrijving</label><textarea id="uploadDescription" rows="3"></textarea></div>
             <div class="field full"><label>Videobestand (maximaal 500 MB)</label><input id="uploadFile" type="file" accept="video/*"></div>
             <div class="field full">
@@ -1091,6 +1091,7 @@ async function loadComments(videoId) {
       <div class="comment">
         <strong>${escapeHTML(comment.author_name || comment.name || "Gebruiker")}</strong>
         <p>${escapeHTML(comment.comment)}</p>
+        <button class="action-btn" onclick="replyToComment(${Number(comment.id)},${Number(videoId)})">Beantwoorden</button>
       </div>
     `).join("");
   } catch (error) {
@@ -1098,6 +1099,7 @@ async function loadComments(videoId) {
   }
 }
 
+async function replyToComment(commentId,videoId){const comment=prompt("Schrijf je antwoord:");if(!comment||!comment.trim())return;try{await api("/videos/"+videoId+"/comments/"+commentId+"/replies",{method:"POST",body:JSON.stringify({comment:comment.trim()})});toast("Antwoord geplaatst.");loadComments(videoId);}catch(e){toast(e.message);}}
 async function postComment(videoId) {
   const input = document.getElementById("commentInput");
   const comment = input.value.trim();
@@ -2263,7 +2265,7 @@ if ("serviceWorker" in navigator) {
 }
 
 /* NIEUWE FAITHTUBE FUNCTIES */
-async function loadKidsVideos(){const list=approvedVideos.filter(v=>/kind|kids/i.test(String(v.category||"")));renderVideoList("kidsVideos",list);}
+async function loadKidsVideos(){const list=approvedVideos.filter(v=>String(v.category||"")==="Kinderhoek");renderVideoList("kidsVideos",list);}
 function applyVideoFilters(){let list=[...approvedVideos];const c=document.getElementById("videoCategoryFilter")?.value||"";const d=document.getElementById("videoDateFilter")?.value||"";const sort=document.getElementById("videoSortFilter")?.value||"new";if(c)list=list.filter(v=>v.category===c);if(d)list=list.filter(v=>String(v.created_at||"").slice(0,10)>=d);list.sort((a,b)=>sort==="popular"?Number(b.views_count||0)-Number(a.views_count||0):String(b.created_at||"").localeCompare(String(a.created_at||"")));renderVideoList("allVideos",list);}
 async function loadReadingPlans(){const el=document.getElementById("readingPlans");if(!el)return;try{const data=await api("/reading-plans");el.innerHTML=data.plans.map(plan=>{const done=(data.progress.find(p=>p.planId===plan.id)||{}).completedDays||[];return '<div class="panel"><h2>'+escapeHTML(plan.name)+'</h2><p>'+escapeHTML(plan.description)+'</p><p>'+done.length+' van '+plan.days.length+' dagen voltooid</p>'+plan.days.map(day=>'<label style="display:block;margin:9px 0"><input type="checkbox" '+(done.includes(day.day)?'checked':'')+' onchange="toggleReadingDay(\''+plan.id+'\','+day.day+',this.checked)"> Dag '+day.day+': '+escapeHTML(day.reading)+'</label>').join('')+'</div>';}).join('');}catch(e){el.textContent=e.message;}}
 async function toggleReadingDay(id,day,checked){try{const data=await api("/reading-plans");const done=(data.progress.find(p=>p.planId===id)||{}).completedDays||[];const next=checked?[...done,day]:done.filter(n=>n!==day);await api("/reading-plans/"+id+"/progress",{method:"PUT",body:JSON.stringify({completedDays:next})});toast("Leesvoortgang opgeslagen.");}catch(e){toast(e.message);}}
