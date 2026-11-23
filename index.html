@@ -965,18 +965,11 @@ function loadYouth() {
 
 async function searchVideos() {
   const query = document.getElementById("searchInput").value.trim();
-
-  if (!query) {
-    showPage("videos");
-    return;
-  }
-
-  try {
-    const results = await api("/videos/search?q=" + encodeURIComponent(query));
-    renderVideoList("allVideos", results);
-    showPage("videos");
-  } catch (error) {
-    toast(error.message);
+  showPage("videos");
+  applyVideoFilters();
+  if (query) {
+    const count = document.getElementById("allVideos").children.length;
+    toast(count ? count + " resultaten gevonden." : "Geen video's gevonden.");
   }
 }
 
@@ -2271,7 +2264,7 @@ if ("serviceWorker" in navigator) {
 
 /* NIEUWE FAITHTUBE FUNCTIES */
 async function loadKidsVideos(){const list=approvedVideos.filter(v=>String(v.category||"")==="Kinderhoek");renderVideoList("kidsVideos",list);}
-function applyVideoFilters(){let list=[...approvedVideos];const c=document.getElementById("videoCategoryFilter")?.value||"";const d=document.getElementById("videoDateFilter")?.value||"";const sort=document.getElementById("videoSortFilter")?.value||"new";if(c)list=list.filter(v=>v.category===c);if(d)list=list.filter(v=>String(v.created_at||"").slice(0,10)>=d);list.sort((a,b)=>sort==="popular"?Number(b.views_count||0)-Number(a.views_count||0):String(b.created_at||"").localeCompare(String(a.created_at||"")));renderVideoList("allVideos",list);}
+function applyVideoFilters(){let list=[...approvedVideos];const query=(document.getElementById("searchInput")?.value||"").trim().toLocaleLowerCase("nl");const c=document.getElementById("videoCategoryFilter")?.value||"";const d=document.getElementById("videoDateFilter")?.value||"";const sort=document.getElementById("videoSortFilter")?.value||"new";if(query)list=list.filter(v=>[v.title,v.description,v.category,v.author_name].some(x=>String(x||"").toLocaleLowerCase("nl").includes(query)));if(c)list=list.filter(v=>v.category===c);if(d)list=list.filter(v=>String(v.created_at||"").slice(0,10)>=d);list.sort((a,b)=>sort==="popular"?Number(b.views_count||0)-Number(a.views_count||0):String(b.created_at||"").localeCompare(String(a.created_at||"")));renderVideoList("allVideos",list);}
 async function loadReadingPlans(){const el=document.getElementById("readingPlans");if(!el)return;try{const data=await api("/reading-plans");el.innerHTML=data.plans.map(plan=>{const done=(data.progress.find(p=>p.planId===plan.id)||{}).completedDays||[];return '<div class="panel"><h2>'+escapeHTML(plan.name)+'</h2><p>'+escapeHTML(plan.description)+'</p><p>'+done.length+' van '+plan.days.length+' dagen voltooid</p>'+plan.days.map(day=>'<label style="display:block;margin:9px 0"><input type="checkbox" '+(done.includes(day.day)?'checked':'')+' onchange="toggleReadingDay(\''+plan.id+'\','+day.day+',this.checked)"> Dag '+day.day+': '+escapeHTML(day.reading)+'</label>').join('')+'</div>';}).join('');}catch(e){el.textContent=e.message;}}
 async function toggleReadingDay(id,day,checked){try{const data=await api("/reading-plans");const done=(data.progress.find(p=>p.planId===id)||{}).completedDays||[];const next=checked?[...done,day]:done.filter(n=>n!==day);await api("/reading-plans/"+id+"/progress",{method:"PUT",body:JSON.stringify({completedDays:next})});toast("Leesvoortgang opgeslagen.");}catch(e){toast(e.message);}}
 function liveEmbed(url){try{const u=new URL(url);if(u.hostname==="youtu.be")return "https://www.youtube-nocookie.com/embed/"+u.pathname.slice(1);if(u.hostname.includes("youtube.com")){const id=u.searchParams.get("v")||(u.pathname.match(/\/live\/([^/]+)/)||[])[1];return id?"https://www.youtube-nocookie.com/embed/"+id:u.href;}if(u.hostname.includes("twitch.tv"))return "https://player.twitch.tv/?channel="+u.pathname.split("/").filter(Boolean).pop()+"&parent="+location.hostname;}catch(e){}return "";}
