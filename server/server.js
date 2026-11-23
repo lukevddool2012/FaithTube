@@ -1523,6 +1523,12 @@ app.get("/playlists/:id/videos", authenticate, (req,res) => {
  if(!p) return res.status(404).json({error:"Afspeellijst niet gevonden."});
  res.json(db.prepare("SELECT videos.*,users.name AS author_name FROM playlist_videos JOIN videos ON videos.id=playlist_videos.video_id LEFT JOIN users ON users.id=videos.user_id WHERE playlist_videos.playlist_id=? AND videos.approved=1 ORDER BY playlist_videos.created_at DESC").all(p.id));
 });
+app.get("/playlists/:id", authenticate, (req,res) => {
+ const playlist=db.prepare("SELECT id,name FROM user_playlists WHERE id=? AND user_id=?").get(req.params.id,req.user.id);
+ if(!playlist) return res.status(404).json({error:"Afspeellijst niet gevonden."});
+ const videos=db.prepare("SELECT video_id FROM playlist_videos WHERE playlist_id=? ORDER BY created_at DESC").all(playlist.id);
+ res.json({...playlist,videos});
+});
 app.post("/playlists/:id/videos/:videoId", authenticate, (req,res) => {
  const p=db.prepare("SELECT id FROM user_playlists WHERE id=? AND user_id=?").get(req.params.id,req.user.id);
  const v=db.prepare("SELECT id FROM videos WHERE id=? AND approved=1").get(req.params.videoId);
