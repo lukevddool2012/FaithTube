@@ -1221,6 +1221,7 @@ app.get("/videos/:id/comments", (req, res) => {
         SELECT
             comments.id,
             comments.comment,
+            comments.parent_comment_id,
             comments.created_at,
             users.name AS author_name
         FROM comments
